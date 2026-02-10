@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumen: R-9 Knowledge Web</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0c12;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #c9d1d9;
+        }
+
+        #main-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #header {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #11141d 0%, #1a1f2e 100%);
+            border-bottom: 1px solid #30363d;
+            z-index: 10;
+        }
+
+        #header h2 {
+            margin: 0;
+            color: #adbac7;
+        }
+
+        #header h2 span {
+            color: #58a6ff;
+        }
+
+        #header p {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #57606a;
+        }
+
+        /* Controls Bar */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 25px;
+            background: #11141d;
+            border-bottom: 1px solid #30363d;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Search */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 350px;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid #30363d;
+            border-radius: 20px;
+            font-size: 14px;
+            background: #1c2128;
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #search-input:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+
+        #search-input::placeholder {
+            color: #484f58;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #484f58;
+        }
+
+        /* Autocomplete */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1c2128;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+        }
+
+        .autocomplete-dropdown.active {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item:hover,
+        .autocomplete-item.selected {
+            background: #21262d;
+        }
+
+        .autocomplete-item .phase-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .autocomplete-item .domain-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #30363d;
+            color: #8b949e;
+        }
+
+        /* Filter Selects */
+        .filter-select {
+            padding: 8px 30px 8px 12px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #1c2128;
+            color: #c9d1d9;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            min-width: 130px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        /* Export Buttons */
+        .export-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .export-btn.png {
+            background: #238636;
+            color: white;
+        }
+
+        .export-btn.png:hover {
+            background: #2ea043;
+        }
+
+        .export-btn.pdf {
+            background: #da3633;
+            color: white;
+        }
+
+        .export-btn.pdf:hover {
+            background: #f85149;
+        }
+
+        .export-btn.reset {
+            background: #30363d;
+            color: #c9d1d9;
+        }
+
+        .export-btn.reset:hover {
+            background: #484f58;
+        }
+
+        /* Network */
+        #mynetwork {
+            flex-grow: 1;
+            min-height: 600px;
+            background: #0a0c12;
+            cursor: grab;
+        }
+
+        /* Details Panel */
+        #details-panel {
+            width: 400px;
+            background: #11141d;
+            border-left: 1px solid #30363d;
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .panel-placeholder {
+            color: #484f58;
+            text-align: center;
+            margin-top: 150px;
+            font-style: italic;
+        }
+
+        .node-title {
+            color: #58a6ff;
+            margin: 0 0 15px 0;
+            font-size: 22px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .micro-skills {
+            background: #1c2128;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 3px solid #58a6ff;
+        }
+
+        .micro-skills ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #adbac7;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .remedial-box {
+            background: rgba(210, 153, 34, 0.1);
+            border: 1px solid rgba(210, 153, 34, 0.3);
+            color: #e3b341;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        /* Triple-A Boxes */
+        .why-box {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            border-left: 3px solid #58a6ff;
+            color: #adbac7;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .gap-box {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+            border-left: 3px solid #f85149;
+            color: #ff7b72;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .fix-box {
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            border-left: 3px solid #3fb950;
+            color: #7ee787;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .pillar-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .prereq-section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #30363d;
+        }
+
+        .prereq-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .prereq-chip {
+            background: #21262d;
+            color: #8b949e;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .prereq-chip:hover {
+            background: #30363d;
+            color: #58a6ff;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(17, 20, 29, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            font-size: 11px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: #8b949e;
+            margin-bottom: 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            position: absolute;
+            bottom: 20px;
+            right: 420px;
+            background: rgba(17, 20, 29, 0.95);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            font-size: 11px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+
+        .stat-label {
+            color: #8b949e;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #30363d;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #238636;
+        }
+
+        .toast.error {
+            background: #da3633;
+        }
+
+        .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #484f58;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="main-container">
+        <div id="header">
+            <h2>📊 Lumen <span>Knowledge Web</span></h2>
+            <p>Complete CAPS Mathematics Curriculum • Grade R to Grade 9 • Atomized Micro-Skills</p>
+        </div>
+
+        <div class="controls-bar">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search topics or skills...">
+                <span class="search-icon">🔍</span>
+                <div class="autocomplete-dropdown" id="autocomplete-dropdown"></div>
+            </div>
+
+            <div class="control-group">
+                <label>Pillar:</label>
+                <select class="filter-select" id="pillar-filter">
+                    <option value="all">All Pillars</option>
+                    <option value="Core">🧠 Number Sense</option>
+                    <option value="Algebra">📈 Algebra Path</option>
+                    <option value="Physical">📐 Physical Path</option>
+                    <option value="Data">📊 Data Path</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Domain:</label>
+                <select class="filter-select" id="domain-filter">
+                    <option value="all">All Domains</option>
+                    <option value="Numbers">Numbers</option>
+                    <option value="Patterns">Patterns & Algebra</option>
+                    <option value="Space">Space & Shape</option>
+                    <option value="Measurement">Measurement</option>
+                    <option value="Data">Data Handling</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Phase:</label>
+                <select class="filter-select" id="phase-filter">
+                    <option value="all">All Phases</option>
+                    <option value="R">Grade R</option>
+                    <option value="Found">Foundation (1-3)</option>
+                    <option value="Inter">Intermediate (4-6)</option>
+                    <option value="Senior">Senior (7-9)</option>
+                </select>
+            </div>
+
+            <div class="control-group" style="margin-left: auto;">
+                <button class="export-btn reset" onclick="resetNetwork()">↻ Reset</button>
+                <button class="export-btn png" onclick="exportPNG()">📷 PNG</button>
+                <button class="export-btn pdf" onclick="exportPDF()">📄 PDF</button>
+            </div>
+        </div>
+
+        <div id="mynetwork"></div>
+
+        <div class="legend">
+            <div class="legend-title">Phase Colors</div>
+            <div class="legend-grid">
+                <div class="legend-item"><span class="dot" style="background:#f78166;"></span> Senior (7-9)</div>
+                <div class="legend-item"><span class="dot" style="background:#d29922;"></span> Inter (4-6)</div>
+                <div class="legend-item"><span class="dot" style="background:#3fb950;"></span> Found (1-3)</div>
+                <div class="legend-item"><span class="dot" style="background:#bc8cff;"></span> Grade R</div>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value" id="node-count">0</div>
+                <div class="stat-label">Nodes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="edge-count">0</div>
+                <div class="stat-label">Connections</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="domain-count">5</div>
+                <div class="stat-label">Domains</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="details-panel">
+        <div id="panel-content">
+            <div class="panel-placeholder">Select any node in the web to view atomized learning objectives and
+                remediation strategies.</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="text/javascript">
+        // ═══════════════════════════════════════════════════════════════════════════
+        // LUMEN TRACER - Complete CAPS Mathematics Curriculum Data (Embedded)
+        // ═══════════════════════════════════════════════════════════════════════════
+
+        const atomizedNodes = [
+            // DOMAIN 1: NUMBERS, OPERATIONS & RELATIONSHIPS (CORE PILLAR: Number Sense & Logic)
+            {
+                id: 'NR_1TO1', label: '1-to-1 Counting', pillar: 'Core', domain: 'Numbers', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Cardinality and 1-to-1 correspondence are the absolute bedrock of all mathematical quantity.",
+                gap: "Student counts faster or slower than they touch objects; misses objects or counts the same one twice.",
+                fix: "Move-and-count: Physically move objects from one bowl to another while speaking the number aloud.",
+                skills: ['Cardinality principle', 'Touch-count objects', 'Stable order counting', 'Last number = total']
+            },
+            {
+                id: 'NR_RECOG', label: 'Number Recognition\n(1-10)', pillar: 'Core', domain: 'Numbers', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Linking abstract symbols to physical quantity converts perception into formal mathematical thought.",
+                gap: "Can count to 10 but cannot identify the symbol '7' out of sequence.",
+                fix: "Sandpaper numerals: Trace textured numbers while saying the quantity; match to pebble sets.",
+                skills: ['Recognize numerals 1-10', 'Match numeral to quantity', 'Trace and write numerals']
+            },
+            {
+                id: 'NR_COMPARE', label: 'Compare Quantities', pillar: 'Core', domain: 'Numbers', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Understanding 'more' and 'less' is the prerequisite for the operations of addition and subtraction.",
+                gap: "Chooses a tall thin container over a short wide one with more items; focuses on height/volume rather than count.",
+                fix: "Stacking towers: Build two towers and physically line them up side-by-side to see the difference.",
+                skills: ['More than / Less than', 'Same as / Equal', 'Order by quantity']
+            },
+            {
+                id: 'N1_BONDS10', label: 'Number Bonds\nto 10', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Fluency in combinations (e.g. 7+3) allows the brain to process larger numbers without cognitive overload.",
+                gap: "Still counts on fingers for simple 3+2; doesn't see the 'missing piece' in a set of 10.",
+                fix: "Ten Frames: Use two-color counters on a 2x5 grid to 'see' the partitions of 10.",
+                skills: ['Part-part-whole relationships', 'Complements to 10', 'Mental addition strategies', 'Fact families']
+            },
+            {
+                id: 'N1_ADDSUBT', label: 'Addition &\nSubtraction', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Addition and subtraction are the primary tools for quantifying change and difference.",
+                gap: "Struggles to move from 'one more' to 'the result is the sum'; loses track of start point on number line.",
+                fix: "Number Line Jumps: Use a large masking tape number line on the floor; jump forward for add, back for subtract.",
+                skills: ['Counting on/back', 'Using number line', 'Story problems', 'Recording number sentences']
+            },
+            {
+                id: 'N2_BONDS20', label: 'Number Bonds\nto 20', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Bridging 10 is the gateway to mental agility with larger numbers and decimal structures.",
+                gap: "Stuck on 8+5; cannot quickly use 8+2=10, then add the remaining 3.",
+                fix: "Double Ten Frames: Fill one frame, start the next; emphasize the 'bridge' over the 10-item mark.",
+                skills: ['Bridging through 10', 'Near doubles strategy', 'Mental subtraction', 'Quick recall']
+            },
+            {
+                id: 'N2_PLACE', label: 'Place Value\n(Tens & Units)', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Positional value is the core 'code' of our number system; it allows us to represent infinite values with 10 digits.",
+                gap: "Writes '14' but thinks it is '1' and '4' rather than '10' and '4'.",
+                fix: "Bundling: Tie 10 sticks together with a rubber band to create a physical 'Ten'.",
+                skills: ['Bundling into tens', 'Expanded notation', 'Representing 2-digit numbers', 'Value vs digit']
+            },
+            {
+                id: 'N3_TIMES', label: 'Multiplication\nTables', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Multiplication is scaling; it's the foundation for area, proportion, and algebraic functions.",
+                gap: "Counts skip patterns (2, 4, 6...) but cannot recall 7x3; doesn't see 3x7 as the same as 7x3.",
+                fix: "Array Cards: Use dot grids to show that 3 rows of 4 is the same area as 4 rows of 3.",
+                skills: ['Skip counting patterns', '2, 5, 10, 3, 4 tables', 'Array representations', 'Commutativity']
+            },
+            {
+                id: 'N3_SHARING', label: 'Division as\nSharing', pillar: 'Core', domain: 'Numbers', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Division is the logic of fairness and partitioning; it scales down just as multiplication scales up.",
+                gap: "Cannot distribute items equally; doesn't understand what a 'remainder' physically represents.",
+                fix: "Fair Sharing: Distribute 13 cookies to 4 stuffed animals; discuss the one leftover cookie.",
+                skills: ['Equal sharing', 'Grouping', 'Remainders concept', 'Inverse of multiplication']
+            },
+            {
+                id: 'N4_DIV', label: 'Long Division', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Multi-step algorithms develop procedural patience and the ability to break complex problems into parts.",
+                gap: "Gets lost in the cycle: Divide, Multiply, Subtract, Bring Down; misaligns columns.",
+                fix: "DMSB Checklist: Use a physical bookmark with symbols to track the current step in the cycle.",
+                skills: ['Estimation quotients', 'Subtraction regrouping', 'Recording algorithm', 'Checking with multiplication']
+            },
+            {
+                id: 'N4_FRAC', label: 'Fractions', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Fractions move math from whole increments to the space between numbers; essential for ratio and algebra.",
+                gap: "Thinks 1/4 is bigger than 1/2 because 4 is bigger than 2; treats numerator/denominator as separate numbers.",
+                fix: "Paper Folding: Fold different colored strips into halves, quarters, eighths; overlay them to compare.",
+                skills: ['Equal parts of whole', 'Numerator/Denominator meaning', 'Equivalent fractions', 'Comparing fractions']
+            },
+            {
+                id: 'N4_FACTOR', label: 'Factors &\nMultiples', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Factors reveal the internal 'DNA' of a number; critical for simplifying and finding common ground in math.",
+                gap: "Cannot find all factor pairs; confuses the definitions of factors (inside) and multiples (outside).",
+                fix: "Factor Rainbows: List factors in pairs and draw arcs to connect them (1 connects to 12, 2 to 6, etc.).",
+                skills: ['Factor pairs', 'Prime numbers', 'Common factors', 'LCM basics']
+            },
+            {
+                id: 'N5_DECIMAL', label: 'Decimals', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Standard base-10 extension that connects whole numbers to fractions in a uniform system.",
+                gap: "Doesn't understand place value to the right of the dot; thinks 0.12 is larger than 0.8.",
+                fix: "Money link: Use Rands and Cents; correlate 10 cents to a tenth and 1 cent to a hundredth.",
+                skills: ['Tenths and hundredths', 'Decimal place value', 'Fraction-decimal conversion', 'Ordering decimals']
+            },
+            {
+                id: 'N5_FRACOP', label: 'Fraction\nOperations', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Operational fluency with parts of a whole is mandatory for secondary school science and commerce.",
+                gap: "Adds numerators AND denominators (e.g., 1/2 + 1/2 = 2/4).",
+                fix: "Fraction Bars: Use physical segments to show that two halves joined together equal one whole.",
+                skills: ['Add/subtract like denominators', 'Unlike denominators intro', 'Mixed numbers', 'Fraction of quantity']
+            },
+            {
+                id: 'N6_PERCENT', label: 'Percentages', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Universal language for proportion, growth, and probability in every-day life.",
+                gap: "Cannot see that 50% is 'half'; struggles to find percentages that aren't multiples of 10.",
+                fix: "100-Grid: Color in 100 small squares to visualize percent as 'per one hundred'.",
+                skills: ['Percent = per 100', 'Fraction-decimal-percent conversion', 'Finding % of amount', 'Discount/increase']
+            },
+            {
+                id: 'N6_RATIO', label: 'Ratio & Rate', pillar: 'Core', domain: 'Numbers', phase: 'Inter', color: '#d29922', level: 7,
+                why: "The logic of relationship; how one quantity changes in direct proportion to another.",
+                gap: "Confuses part-to-part (2 reds for 3 blues) with part-to-whole (2 out of 5 are red).",
+                fix: "Recipe Scaling: Calculate the ingredients needed for 12 people if the recipe is for 4.",
+                skills: ['Part-to-part comparison', 'Equivalent ratios', 'Unit rate', 'Proportion problems']
+            },
+            {
+                id: 'N7_INTEGER', label: 'Integers', pillar: 'Core', domain: 'Numbers', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Introduction of directional quantity; numbers can be positive or negative relative to zero.",
+                gap: "Struggles with 'minus a minus'; gets confused by relative motion on number line.",
+                fix: "Two-Color Counters: Use yellow for (+) and red for (-); 'Zero Pairs' (one red + one yellow) cancel out.",
+                skills: ['Number line with negatives', 'Adding integers', 'Subtracting integers', 'Multiplying/dividing integers']
+            },
+            {
+                id: 'N7_COMMON', label: 'Common Fractions\nAdvanced', pillar: 'Core', domain: 'Numbers', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Mastery of all rational number operations is the final gate before high-level Algebra.",
+                gap: "Forget to find common denominators; struggles to invert and multiply for division.",
+                fix: "Visual Area Model: Draw cross-sections of a rectangle to show overlapping fraction multiplication.",
+                skills: ['All four operations', 'Converting to decimals', 'Ordering rational numbers', 'Problem solving']
+            },
+            {
+                id: 'N8_EXPONENT', label: 'Exponents', pillar: 'Core', domain: 'Numbers', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Exponents represent rapid growth/scaling; the foundation for scientific notation and power-functions.",
+                gap: "Thinks 3 squared is 6 (linear) instead of 9 (geometric scaling).",
+                fix: "Paper Folding: Fold a paper in half multiple times; 3 folds results in 8 layers (2^3), not 6.",
+                skills: ['Base and index', 'Laws of exponents', 'Negative exponents', 'Scientific notation']
+            },
+            {
+                id: 'N8_RATIONAL', label: 'Rational Numbers', pillar: 'Core', domain: 'Numbers', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Defining the limits of logical numbers; understanding repeating vs terminating decimals.",
+                gap: "Cannot distinguish between 1/3 (repeating) and 1/4 (terminating); fails to see them as rational.",
+                fix: "Calculator Explorations: Divide 1 by factors of 10 vs prime factors like 3 or 7 to see the pattern.",
+                skills: ['Representing on number line', 'Operations with rationals', 'Terminating vs recurring decimals']
+            },
+            {
+                id: 'N9_FACTOR', label: 'Factoring\nTrinomials', pillar: 'Algebra', domain: 'Numbers', phase: 'Senior', color: '#f78166', level: 10,
+                why: "The ability to dismantle algebraic structures into their constituent 'DNA' components.",
+                gap: "Fails to see the relationship between cross-multiplication and factoring; gets lost in FOIL reversal.",
+                fix: "Algebra Tiles: Use physical squares and rectangles to 'build' the area of the trinomial; find the sides.",
+                skills: ['Finding factors of c', 'Sum to coefficient b', 'FOIL reversal', 'Difference of squares']
+            },
+
+            // DOMAIN 2: PATTERNS, FUNCTIONS & ALGEBRA
+            {
+                id: 'PR_COPY', label: 'Copy & Extend\nPatterns', pillar: 'Core', domain: 'Patterns', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Pattern recognition is the brain's way of finding predictability in the world; the root of algebraic logic.",
+                gap: "Cannot identify the 'core' of a pattern (the part that repeats); adds random items to a sequence.",
+                fix: "Body Percussion: Create a clap-pat-clap-pat pattern; have the student copy and physically continue it.",
+                skills: ['Identify repeating unit', 'Copy AB, ABB patterns', 'Extend simple sequences', 'Create own patterns']
+            },
+            {
+                id: 'P1_CREATE', label: 'Create Own\nPatterns', pillar: 'Core', domain: 'Patterns', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Generative logic allows students to move from passive recognition to active construction of rules.",
+                gap: "Patterns fall apart after 2-3 repetitions; lacks a consistent internal rule.",
+                fix: "Pattern Blocks: Use geometric shapes to build a 'train'; explain the rule to a partner.",
+                skills: ['ABB, AAB, ABC patterns', 'Describe the rule verbally', 'Identify pattern errors', 'Physical patterns']
+            },
+            {
+                id: 'P2_NUMBER', label: 'Number Patterns', pillar: 'Core', domain: 'Patterns', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Connecting spatial patterns to numerical sequences; the birth of the function concept.",
+                gap: "Cannot find the 'jump' between numbers; treats each number as an isolated fact.",
+                fix: "Hundred Board Jumps: Use a transparent counter on a 100-chart to visually see the 'shape' of adding 5s or 10s.",
+                skills: ['Skip counting sequences', '+2, +5, +10 patterns', 'Finding missing terms', 'Describing rules']
+            },
+            {
+                id: 'P3_GEOMETRIC', label: 'Geometric\nPatterns', pillar: 'Core', domain: 'Patterns', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Visualizing growth; understanding how a constant change in one dimension affects the whole.",
+                gap: "Sees the next step but cannot describe the rate of growth; struggles to predict the 10th step.",
+                fix: "Matchstick Patterns: Build a sequence of squares; count how many 'new' sticks are added each time.",
+                skills: ['Growing patterns', 'Shrinking patterns', 'Pattern tables', 'Predicting next terms']
+            },
+            {
+                id: 'P4_INOUT', label: 'Input-Output\nTables', pillar: 'Algebra', domain: 'Patterns', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Formalizing the function concept (f(x)); understanding the predictable relationship between variables.",
+                gap: "Can find the output if given the rule, but cannot reverse the logic to find the input.",
+                fix: "Function Machine: Use a physical box where a 'number card' goes in and a 'result card' comes out.",
+                skills: ['Function machines concept', 'Finding the rule', 'Completing tables', 'Multiple operations']
+            },
+            {
+                id: 'P5_VARIABLE', label: 'Variables &\nExpressions', pillar: 'Algebra', domain: 'Patterns', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Moving from concrete numbers to 'any' number; the shift to generalized mathematics.",
+                gap: "Thinks 'x' has a fixed value (like x=5) rather than representing a placeholder.",
+                fix: "Envelope Game: Put a secret number of beans in an envelope labeled 'x'; add 3; solve for the total.",
+                skills: ['Letter symbols for unknowns', 'Substitution', 'Writing expressions', 'Evaluating expressions']
+            },
+            {
+                id: 'P6_EQUATION', label: 'Simple Equations', pillar: 'Algebra', domain: 'Patterns', phase: 'Inter', color: '#d29922', level: 7,
+                why: "The logic of the scale; maintaining equality while manipulating components.",
+                gap: "Performs an operation on only one side; doesn't understand 'backwards' operations.",
+                fix: "Balance Scales: Use a physical balance with weights to show that adding/removing must happen on both sides.",
+                skills: ['Balancing equations', 'Solving one-step equations', 'Checking solutions', 'Word problem to equation']
+            },
+            {
+                id: 'P7_LINEAR', label: 'Linear\nRelationships', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Modeling constant change; the mathematical foundation for physics and economics.",
+                gap: "Cannot link a table of values to a straight line on a graph; confuses gradient with intercept.",
+                fix: "Walking Graphs: Use a motion sensor or a timer to walk at a constant pace; plot distance vs time.",
+                skills: ['Graphing on Cartesian plane', 'Table-to-graph conversion', 'y = mx + c concept', 'Interpreting gradient']
+            },
+            {
+                id: 'P7_FUNCTION', label: 'Functions &\nRelationships', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Systems-based thinking; mapping dependencies in complex data sets.",
+                gap: "Fails to see multiple representations (table, graph, formula) as the same thing.",
+                fix: "Representation Match-up: Sort cards containing graphs, tables, and formulas into matching sets.",
+                skills: ['Input-output with formulas', 'Equivalent representations', 'Flow diagrams', 'Number sentences']
+            },
+            {
+                id: 'P8_SOLVE', label: 'Solving Equations', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Procedural mastery of isolating variables in multi-step scenarios.",
+                gap: "Mismanages signs when moving terms across the equal sign; fails to distribute correctly.",
+                fix: "Flow-Chart Solving: Draw the order of operations, then trace backwards with inverse operations.",
+                skills: ['Multi-step equations', 'Equations with brackets', 'Equations with fractions', 'Laws of exponents in equations']
+            },
+            {
+                id: 'P8_EXPRESS', label: 'Algebraic\nExpressions', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 9,
+                why: "The language of algebra; simplifying complex statements into manageable parts.",
+                gap: "Combines unlike terms (e.g., adds 2x and 3); forgets to multiply every term in a bracket.",
+                fix: "Algebra Tiles: Use physical tiles to represent x^2, x, and constants to 'see' combining like terms.",
+                skills: ['Expand brackets', 'Simplify like terms', 'Multiply polynomials', 'Divide by monomials']
+            },
+            {
+                id: 'P9_SIMULT', label: 'Simultaneous\nEquations', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Finding the point of agreement between two different sets of conditions.",
+                gap: "Cannot see that the solution is the 'intersection' of two lines on a graph.",
+                fix: "Crossing Paths: Graph two linear functions on transparency film and find the exact overlay point.",
+                skills: ['Substitution method', 'Elimination method', 'Graphical solution', 'Word problem applications']
+            },
+            {
+                id: 'P9_FACTORISE', label: 'Factorising\nExpressions', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Strategic simplification; taking a complex sum and making it a simple product.",
+                gap: "Misses the highest common factor; cannot identify square numbers in difference of square problems.",
+                fix: "Area Model Reverse: Given a total area made of blocks, find the width and length that formed it.",
+                skills: ['Common factor', 'Difference of squares', 'Trinomial factorisation', 'Grouping']
+            },
+            {
+                id: 'P9_GRAPHS', label: 'Linear Graphs', pillar: 'Algebra', domain: 'Patterns', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Visualizing the 'Infinite'; understanding how local changes (gradient) affect global trends.",
+                gap: "Gets x and y intercepts reversed; cannot predict where a line will go based on its equation.",
+                fix: "Intercept Hunts: Use a large x-y grid on the floor and stand at the intercepts for various equations.",
+                skills: ['x and y intercepts', 'Gradient from equation', 'Equations from graphs', 'Parallel/perpendicular lines']
+            },
+
+            // DOMAIN 3: SPACE & SHAPE (PHYSICAL PILLAR: Spatial & Measurement)
+            {
+                id: 'SR_DIR', label: 'Following\nDirections', pillar: 'Physical', domain: 'Space', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Orientation in space is the foundational neural architecture for navigation and geometry.",
+                gap: "Confuses left/right; cannot follow a 3-step physical path without mid-way correction.",
+                fix: "Obstacle Course: Follow specific 'treasure map' commands (3 steps left, 2 steps forward).",
+                skills: ['Movement instructions', 'Identifying shapes in environment', 'Tracing paths', 'Basic orientation']
+            },
+            {
+                id: 'SR_VIEW', label: 'Viewing Objects', pillar: 'Physical', domain: 'Space', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Perspective taking; understanding that objects look different but remain the same depending on viewpoint.",
+                gap: "Cannot predict what an object looks like from the 'top' while looking at the 'front'.",
+                fix: "Block Drawing: Build a small house with blocks, then draw it from 3 different sides.",
+                skills: ['Front, side, top view', 'Match 3D to 2D outline', 'Puzzle completion', 'Building with blocks']
+            },
+            {
+                id: 'SR_SHAPE', label: 'Recognise 3D\nObjects', pillar: 'Physical', domain: 'Space', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Moving from vague perception to specific geometric categorization.",
+                gap: "Uses non-math terms like 'ball' instead of 'sphere' or 'box' instead of 'prism'; cannot group like-shapes.",
+                fix: "Feely Bag: Hide a shape in a bag; student must describe it using only touch before naming it.",
+                skills: ['Ball, box, cone shapes', 'Describe attributes', 'Sort by shape', 'Find in environment']
+            },
+            {
+                id: 'S1_POSITION', label: 'Position &\nDirection', pillar: 'Physical', domain: 'Space', phase: 'Found', color: '#3fb950', level: 2,
+                why: "The relative map; understanding how 'where' depends on your 'starting point'.",
+                gap: "Fails to use relative terms like 'behind' or 'opposite' correctly in a map context.",
+                fix: "Simon Says Position: 'Put the book behind the chair'; 'Put yourself in front of the desk'.",
+                skills: ['Left, right, behind, in-front', 'Multi-step paths', 'Mapping classroom', 'Relative position']
+            },
+            {
+                id: 'S1_2DSHAPE', label: '2D Shape\nRecognition', pillar: 'Physical', domain: 'Space', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Isolating the boundary of objects; the transition from 3D world to 2D representation.",
+                gap: "Does not recognize a square if it is rotated (thinks it is a 'diamond'); confuses rectangle/square.",
+                fix: "Shape Hunts: Find 2D outlines in the physical environment (windows, clock faces, floor tiles).",
+                skills: ['Circle, triangle, square, rectangle', 'Sides and corners', 'Sort by attributes', 'Find in environment']
+            },
+            {
+                id: 'S2_PROPERTY', label: '2D Shape\nProperties', pillar: 'Physical', domain: 'Space', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Attribute-based logic; defining shapes by their rules rather than just their 'look'.",
+                gap: "Cannot distinguish between a triangle and a quadrilateral by counting vertices.",
+                fix: "Geoboards: Use rubber bands to stretch shapes; count the sides and the 'corners' (pins).",
+                skills: ['Count sides and vertices', 'Describe shapes', 'Compare shapes', 'Right angles awareness']
+            },
+            {
+                id: 'S3_3DPROP', label: '2D vs 3D\nProperties', pillar: 'Physical', domain: 'Space', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Understanding structural complexity; how 2D shapes (faces) combine to make 3D solids.",
+                gap: "Cannot identify which 2D shape forms the base of a prism; confuses faces, edges, and vertices.",
+                fix: "Net Building: Unfold a cardboard box to see the 2D 'template' of a 3D object.",
+                skills: ['Faces, edges, vertices', 'Prisms vs pyramids', 'Polygon identification', 'Nets of 3D shapes']
+            },
+            {
+                id: 'S4_SYMM', label: 'Symmetry', pillar: 'Physical', domain: 'Space', phase: 'Inter', color: '#d29922', level: 5,
+                why: "The logic of balance and reflection; fundamental for art, biology, and engineering.",
+                gap: "Draws a line of symmetry that doesn't result in two identical mirror halves.",
+                fix: "Mirror Work: Use a handheld mirror to 'complete' a drawing on paper to find the line of symmetry.",
+                skills: ['Lines of symmetry', 'Reflectional symmetry', 'Creating symmetric patterns', 'Symmetry in nature']
+            },
+            {
+                id: 'S4_GRID', label: 'Grid Coordinates', pillar: 'Physical', domain: 'Space', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Abstracting location into a digit-based system; the precursor to GPS and mapping.",
+                gap: "Swaps Row and Column when giving a location (e.g. says 3,B instead of B,3).",
+                fix: "Battleship: Play the classic grid game to practice the intersection of x and y axes.",
+                skills: ['Reading grid maps', 'Locating positions', 'Giving directions', 'Simple coordinates']
+            },
+            {
+                id: 'S5_VIEWS', label: 'Views of\nObjects', pillar: 'Physical', domain: 'Space', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Multi-dimensional reasoning; mentally rotating objects to understand their total form.",
+                gap: "Cannot translate 3D blocks into 2D 'elevation' drawings (Top, Side, Front).",
+                fix: "Multilink Cubes: Build a shape; paint the faces touching the 'floor' to see the Footprint (top view).",
+                skills: ['Top, front, side views', 'Drawing views', 'Matching views to objects', 'Isometric awareness']
+            },
+            {
+                id: 'S6_ANGLES', label: 'Angle\nMeasurement', pillar: 'Physical', domain: 'Space', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Quantifying rotation; understanding how 'turning' creates geometric relationship.",
+                gap: "Reads the wrong scale on a protractor (e.g. says 150 deg for a 30 deg acute angle).",
+                fix: "Clock Turning: Use a physical clock face to see the different 'degrees' of a turn.",
+                skills: ['Using protractor', 'Degrees in triangle/circle', 'Acute, Obtuse, Reflex', 'Estimating angles']
+            },
+            {
+                id: 'S6_CLASSIFY', label: 'Classifying\nTriangles', pillar: 'Physical', domain: 'Space', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Taxonomy of triangles; understanding how interior angles govern shape properties.",
+                gap: "Cannot distinguish between 'equilateral' and 'isosceles'; fails to see right-angled triangles in context.",
+                fix: "Triangle Sort: Categorize a pile of paper triangles based on their lengths and internal angles.",
+                skills: ['By angles', 'By sides', 'Properties of each']
+            },
+            {
+                id: 'S7_COORD', label: 'Coordinate\nSystem', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Formalizing spatial logic into the Cartesian Plane; the bridge between geometry and algebra.",
+                gap: "Struggles with negative coordinates; gets the (x,y) order confused when plotting.",
+                fix: "Floor Grid: Create a large x-y axis on the floor with tape; walk to specific (x,y) coordinates.",
+                skills: ['Plotting (x,y) points', 'All four quadrants', 'Grid map reading', 'Ordered pairs']
+            },
+            {
+                id: 'S7_TRANS', label: 'Transformation\nBasics', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 8,
+                why: "The logic of motion; how shapes 'move' without changing their properties (isometry).",
+                gap: "Confuses a 'flip' (reflection) with a 'turn' (rotation) or 'slide' (translation).",
+                fix: "Tracing Paper: Draw a shape, then physically slide, flip, or rotate the paper to see the change.",
+                skills: ['Reflection basics', 'Translation basics', 'Rotation basics', 'Describing movements']
+            },
+            {
+                id: 'S8_CONSTR', label: 'Geometric\nConstructions', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Precision logic; using ancient tools to build perfect geometric relationships.",
+                gap: "Cannot use a compass without it slipping; doesn't see the logic in why an arc creates a midpoint.",
+                fix: "Styrofoam/Pin: Use a string and a pin to create perfect circles and bisect lines physically.",
+                skills: ['Bisecting angles', 'Perpendicular lines', 'Constructing triangles', 'Using compass']
+            },
+            {
+                id: 'S8_PYTHAG', label: 'Theorem of\nPythagoras', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 9,
+                why: "The fundamental connecting link between side length and hypotenuse in right-triangles.",
+                gap: "Fails to 'square' the numbers first; thinks a+b=c rather than a^2 + b^2 = c^2.",
+                fix: "Starburst Proof: Use small squares (like Starburst candy) to show that the squares of sides fit into the hypotenuse square.",
+                skills: ['a² + b² = c² relationship', 'Finding hypotenuse', 'Finding shorter side', 'Identifying right triangles']
+            },
+            {
+                id: 'S8_LINES', label: 'Geometry of\nStraight Lines', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Understanding angular dependencies; how parallel lines create predictable intersections.",
+                gap: "Fails to identify 'Z' (alternate) or 'F' (corresponding) angles in a complex diagram.",
+                fix: "Shadow Stick: Use two parallel sticks and a third stick ('transversal') and use a protractor to check angles.",
+                skills: ['Parallel lines / transversal', 'Corresponding angles', 'Alternate angles', 'Co-interior angles']
+            },
+            {
+                id: 'S9_TRANS', label: 'Transformational\nGeometry', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Applying matrix-style logic to space; understanding scale and directional vectors.",
+                gap: "Fails to use the scale factor correctly in enlargements; gets the origin of rotation wrong.",
+                fix: "GeoGebra Explorations: Use sliders to change scale and rotation in real-time to see the effect.",
+                skills: ['Reflection across axes', 'Rotation around origin', 'Translation vectors', 'Enlargement/reduction']
+            },
+            {
+                id: 'S9_PROOF', label: 'Geometric\nProofs', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 10,
+                why: "The absolute pinnacle of logical reasoning; building an airtight case based on known truths.",
+                gap: "Gives a 'reason' that isn't a geometric law; fails to list steps in a logical sequence.",
+                fix: "Proof Jigsaw: Scramble the steps of a proof and have the student reconstruct it in order.",
+                skills: ['Similarity vs Congruency', 'Proving triangle congruence', 'Angle relationships', 'Logical reasoning']
+            },
+            {
+                id: 'S9_SIMILAR', label: 'Similar &\nCongruent', pillar: 'Physical', domain: 'Space', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Quantifying 'Same-ness'; understanding what properties make objects identical vs just proportional.",
+                gap: "Thinks two shapes are the same just because they look alike; misses scale factor in similarity.",
+                fix: "Magnifying glass: Use a lens to show that angles stay the same while side lengths scale up.",
+                skills: ['Conditions for congruence', 'Conditions for similarity', 'Using properties in problems', 'Scale factor']
+            },
+
+            // DOMAIN 4: MEASUREMENT (PHYSICAL PILLAR: Spatial & Measurement)
+            {
+                id: 'MR_COMPARE', label: 'Compare Size', pillar: 'Physical', domain: 'Measurement', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Initial quantification; moving from 'big' to 'how many units'.",
+                gap: "Cannot distinguish between height/length/mass visually; says a tall balloon is 'heavier' than a small stone.",
+                fix: "Direct Comparison: Place two objects side-by-side; put two objects in each hand to feel weight.",
+                skills: ['Long/Short', 'Heavy/Light', 'Full/Empty', 'Big/Small']
+            },
+            {
+                id: 'MR_TIME', label: 'Time Awareness', pillar: 'Physical', domain: 'Measurement', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Sequencing the ephemeral; understanding that events exist in a predictable order.",
+                gap: "Cannot sequence a three-part routine (Breakfast -> Play -> Nap); confused by 'tomorrow/yesterday'.",
+                fix: "Visual Timeline: Create a clothesline of cards showing daily activities in order.",
+                skills: ['Morning/Afternoon/Night', 'Before/After', 'Days of week', 'Daily routines']
+            },
+            {
+                id: 'M1_NONSTAND', label: 'Non-Standard\nUnits', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 2,
+                why: "The bridge to standard measurement; understanding that units must be 'repetitive and equal'.",
+                gap: "Measures a table using 'hands' but doesn't keep fingers together; says it's 5 hands then 7 hands.",
+                fix: "LEGO Measuring: Use identical LEGO bricks to measure a line; count the bricks.",
+                skills: ['Measure with hands/cubes', 'Need for standard units', 'Estimate lengths', 'Compare measurements']
+            },
+            {
+                id: 'M1_CLOCK', label: 'Time Concepts', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Formalizing duration; the shift from 'feeling' time to 'reading' time.",
+                gap: "Confusion between 'what time it is' and 'how much time has passed'; misses day/night boundaries.",
+                fix: "Paper Plate Clock: Build a clock with moving hands; correlate numbers to daily milestones.",
+                skills: ['Hours in a day', 'Days in a week', 'Months and seasons', 'Yesterday/Today/Tomorrow']
+            },
+            {
+                id: 'M2_LENGTH', label: 'Standard Length\nUnits', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Universal quantification; the ability to communicate precise physical dimension.",
+                gap: "Doesn't align the '0' of the ruler with the start of the object; misreads cm vs mm.",
+                fix: "Ruler Hunt: Find objects that are exactly 10cm, 30cm, 50cm in the classroom.",
+                skills: ['Centimeters', 'Meters', 'Using a ruler', 'Estimating before measuring']
+            },
+            {
+                id: 'M2_TIME', label: 'Telling Time', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Decoding the analog circle; translating rotational position into numerical time.",
+                gap: "Confuses hour and minute hands; thinks '6' always means '6 minutes' rather than 30.",
+                fix: "Geared Teaching Clock: Use a clock where moving the minute hand automatically moves the hour hand.",
+                skills: ['Hour hand reading', "O'clock and half past", 'Quarter past/to', 'Analog clock reading']
+            },
+            {
+                id: 'M2_MONEY', label: 'Money', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Measurement of value; the fundamental application of number sense to commerce.",
+                gap: "Thinks that more coins always means more money; fails to read the numeral values on coins.",
+                fix: "School Shop: Roleplay buying and selling with play money; practice giving change.",
+                skills: ['Coins and notes', 'Value of money', 'Simple totals', 'Giving change']
+            },
+            {
+                id: 'M3_MASS', label: 'Mass\n(Kilograms)', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Quantifying gravity; understanding that size does not always equal weight.",
+                gap: "Confuses 'big' with 'heavy'; cannot read the dial on a manual scale correctly.",
+                fix: "Kitchen Scales: Predict which object is heavier (Apple vs Sponge); then weigh them.",
+                skills: ['Grams and kilograms', 'Using a scale', 'Estimating mass', 'Comparing masses']
+            },
+            {
+                id: 'M3_CAPACITY', label: 'Capacity\n(Litres)', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Quantifying volume; understanding how liquid takes the shape of its container.",
+                gap: "Struggles to see that a tall thin glass might hold the same amount as a short wide bowl.",
+                fix: "Water Play: Use a measuring jug to fill different shaped containers with exactly 500ml.",
+                skills: ['Millilitres and litres', 'Using measuring jugs', 'Estimating capacity', 'Comparing capacities']
+            },
+            {
+                id: 'M3_TIMEADV', label: 'Time\n(Minutes)', pillar: 'Physical', domain: 'Measurement', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Granular duration; building the mental timeline needed for scheduling and planning.",
+                gap: "Fails to skip count by 5s to tell time; doesn't grasp the '60 minutes = 1 hour' loop.",
+                fix: "5-Minute Intervals: Use a clock with the outer 'minutes' (5, 10, 15...) labeled clearly.",
+                skills: ['5-minute intervals', 'Reading all times', 'Duration in hours', 'Elapsed time']
+            },
+            {
+                id: 'M4_CONVERT', label: 'Unit\nConversions', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Flexibility of scale; understanding that 1000mm, 100cm, and 1m are different names for the same truth.",
+                gap: "Multiplies instead of dividing (or vice versa); misses the 10/100/1000 scale.",
+                fix: "Metric Staircase: Draw steps (mm, cm, m); move 'up' to divide by 10/100, move 'down' to multiply.",
+                skills: ['mm ↔ cm ↔ m', 'g ↔ kg', 'ml ↔ l', 'Conversion calculations']
+            },
+            {
+                id: 'M4_PERIM', label: 'Perimeter', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Measuring the 'Boundary'; understanding the total distance around an area.",
+                gap: "Adds only two sides of a rectangle (forgetting the other two); confuses perimeter with area.",
+                fix: "String Wrap: Wrap a string around a physical block, then straighten the string and measure it.",
+                skills: ['Adding all sides', 'Perimeter of rectangles', 'Formula P = 2(l+w)', 'Finding missing sides']
+            },
+            {
+                id: 'M4_TIMEELAP', label: 'Elapsed Time', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Measuring 'Between'; the ability to calculate time as a distance on a line.",
+                gap: "Counts across the '60' mark incorrectly (e.g. says that 30 mins after 2:45 is 2:75).",
+                fix: "T-Chart: List hours on one side and minutes on the other; jump to the next 'anchor' hour first.",
+                skills: ['Calculate durations', 'Reading timetables', 'Adding hours/minutes', 'Timeline problems']
+            },
+            {
+                id: 'M5_AREA', label: 'Area\n(Squares)', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Measuring the 'Skin'; quantifying 2D space through grid logic.",
+                gap: "Attempts to measure area with a ruler around the outside; confuses the concept with perimeter.",
+                fix: "Grid Tiling: Cover a shape with 1cm paper squares; count the squares to find the total area.",
+                skills: ['Counting square units', 'Area = l × w', 'Relationship to perimeter', 'Square cm/m']
+            },
+            {
+                id: 'M5_TIME24', label: '24-Hour Time', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Global standard time; removing the ambiguity of AM/PM in formal contexts.",
+                gap: "Doesn't know whether to add or subtract 12; cannot read a flight timetable correctly.",
+                fix: "Double-Line Timeline: Draw 1-12 on one line and 13-24 below it; find the pairing.",
+                skills: ['24-hour clock notation', 'Converting 12h to 24h', 'Duration calculations', 'Timetable reading']
+            },
+            {
+                id: 'M5_TEMP', label: 'Temperature', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Measuring thermal energy; understanding a system with negative values (Relative to 0).",
+                gap: "Cannot read a thermometer correctly; doesn't grasp that -5 is 'colder' than -2.",
+                fix: "Vertical Thermometer: Use a thermometer in ice water and boiling water to see the range.",
+                skills: ['Thermometer reading', 'Degrees Celsius', 'Comparing temperatures', 'Negative temperatures']
+            },
+            {
+                id: 'M6_AREATRI', label: 'Area of\nTriangles', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Geometric derivation; understanding that every triangle is exactly half of a related rectangle.",
+                gap: "Forgets the 'half' in the formula (A=bh); uses the slanted side instead of the vertical height.",
+                fix: "Split-Rectangle: Cut a paper rectangle diagonally to show it makes two identical triangles.",
+                skills: ['Base/height identification', 'A = ½bh formula', 'Composite shapes', 'Area problem solving']
+            },
+            {
+                id: 'M6_CONVERT', label: 'Advanced\nConversions', pillar: 'Physical', domain: 'Measurement', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Procedural fluency across dimensions (line, area, volume).",
+                gap: "Attempts to convert square cm to square m using the scale of 100 instead of 10,000.",
+                fix: "The 1m Square: Build a square out of 100cm rulers to see why 1m^2 is massive.",
+                skills: ['All unit conversions', 'Area unit conversions', 'Multi-step conversions']
+            },
+            {
+                id: 'M7_CIRCUM', label: 'Circumference\n& Pi', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 8,
+                why: "The discovery of universal constants; the mathematical truth inside every circle.",
+                gap: "Confuses Circumference (around) with Area (inside); fails to see that Pi is a ratio.",
+                fix: "String and Can: Wrap string around a can, measure it, then divide by the can's diameter.",
+                skills: ['Pi as a ratio', 'C = πd formula', 'C = 2πr formula', 'Diameter vs radius']
+            },
+            {
+                id: 'M7_AREACIRCLE', label: 'Area of\nCircles', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Extending grid-logic to curves; calculating the skin of a circular solid.",
+                gap: "Forgets to square the radius (r^2); multiplied by 2 instead of r x r.",
+                fix: "Circle Wedges: Cut a circle into thin wedges and realign them into a rectangle to see the derivation.",
+                skills: ['A = πr² formula', 'Using radius', 'Finding radius from area', 'Circles in composite shapes']
+            },
+            {
+                id: 'M8_VOLUME', label: 'Volume of\nPrisms', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Quantifying 3rd dimensional 'Capacity'; the cornerstone of architecture and engineering.",
+                gap: "Confuses Area with Volume; cannot see the 'stacked layer' logic of a prism.",
+                fix: "Stack of Paper: Show that a pack of paper has an area (top sheet) but volume is that area x height.",
+                skills: ['V = l × w × h', 'V = Area base × height', 'Cubic units', 'Capacity-volume connection']
+            },
+            {
+                id: 'M8_SURFACE', label: 'Surface Area\nBasics', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Measuring the 'Wrapping'; understanding the 2D exposure of a 3D solid.",
+                gap: "Thinks Surface Area and Volume are related by a simple formula; misses faces in complex shapes.",
+                fix: "Wrapping a Box: Use paper to perfectly wrap a box, then unwrap and measure the paper's area.",
+                skills: ['Nets of prisms', 'Calculating surface area', 'Adding face areas', 'Real-world applications']
+            },
+            {
+                id: 'M9_VOLCY', label: 'Volume of\nCylinders', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Applying prism-logic to circular bases; calculating the capacity of pipes and tanks.",
+                gap: "Cannot correctly identify the 'base' area (pi r squared) vs the side of the cylinder.",
+                fix: "Pillar of Coins: Stack identical circular coins; total volume = one coin area x height of stack.",
+                skills: ['V = πr²h formula', 'Finding radius/height', 'Cylinder problems', 'Capacity calculations']
+            },
+            {
+                id: 'M9_SURFADV', label: 'Surface Area\nAdvanced', pillar: 'Physical', domain: 'Measurement', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Complex spatial calculation; optimizing materials for advanced structures.",
+                gap: "Fails to account for the 'overlap' areas in composite shapes; forgets the two end-circles in cylinders.",
+                fix: "Coffee Can Label: Peel the label off a can to see that the side is actually a rectangle.",
+                skills: ['Surface area cylinders', 'Composite 3D shapes', 'Problem solving', 'Optimization']
+            },
+
+            // DOMAIN 5: DATA HANDLING (DATA PILLAR: Analysis & Prediction)
+            {
+                id: 'DR_SORT', label: 'Sort &\nClassify', pillar: 'Data', domain: 'Data', phase: 'R', color: '#bc8cff', level: 1,
+                why: "Categorization is the beginning of data organization; finding commonality in a chaotic world.",
+                gap: "Cannot group objects by more than one attribute at a time (e.g. can sort by color, but not color AND shape).",
+                fix: "Bin Sorting: Use 3-4 colored bins and a pile of varied toys; sort into 'Blue + Car', 'Red + Ball', etc.",
+                skills: ['Sorting by attribute', 'Describing categories', 'Counting in groups', 'Same and different']
+            },
+            {
+                id: 'D1_COLLECT', label: 'Collect &\nRepresent', pillar: 'Data', domain: 'Data', phase: 'Found', color: '#3fb950', level: 2,
+                why: "Transforming reality into information; the first step of scientific inquiry.",
+                gap: "Asks biased questions; forgets to record every response; doesn't know how to 'tally'.",
+                fix: "Class Survey: Stand in a line based on favorite fruit; count the 'people-columns' to see the data.",
+                skills: ['Asking questions', 'Recording answers', 'Object graphs', 'Comparing groups']
+            },
+            {
+                id: 'D2_PICTOGRAPH', label: 'Pictographs', pillar: 'Data', domain: 'Data', phase: 'Found', color: '#3fb950', level: 3,
+                why: "Using symbols to represent quantity; the bridge between physical objects and abstract bar graphs.",
+                gap: "Miscounts symbols; doesn't understand that one picture can represent more than one item (key).",
+                fix: "Sticker Chart: Use one sticker to represent one item; build a physical 'mountain' of stickers for each category.",
+                skills: ['Drawing pictographs', 'Reading pictographs', 'Answering questions from data', 'One-to-one symbols']
+            },
+            {
+                id: 'D3_TALLY', label: 'Tally Charts', pillar: 'Data', domain: 'Data', phase: 'Found', color: '#3fb950', level: 4,
+                why: "Efficient counting in real-time; understanding the power of grouping by 5s.",
+                gap: "Forgets the 'diagonal' strike for 5; miscounts tallies when they aren't grouped correctly.",
+                fix: "Traffic Count: Sit by a window; for every car that passes, draw a line; bundle them with a rubber band.",
+                skills: ['Tally marks (bundling 5s)', 'Frequency tables', 'Converting to numbers', 'Organizing data']
+            },
+            {
+                id: 'D4_BARGRAPH', label: 'Bar Graphs', pillar: 'Data', domain: 'Data', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Visualizing scale and comparison; the standard format for representing discrete data.",
+                gap: "Starts the scale at 1 instead of 0; labels columns incorrectly; doesn't keep bar widths consistent.",
+                fix: "LEGO Bar Graph: Build towers of different heights to represent data; then draw the outline on paper.",
+                skills: ['Drawing bar graphs', 'Reading scales', 'Interpreting data', 'Answering questions']
+            },
+            {
+                id: 'D4_QUESTIONS', label: 'Data Questions', pillar: 'Data', domain: 'Data', phase: 'Inter', color: '#d29922', level: 5,
+                why: "Critical thinking; understanding that data is only as good as the questions asked.",
+                gap: "Accepts any graph as truth without checking the sample size or bias.",
+                fix: "Graph Detective: Look at two graphs of the same data with different scales; discuss why they look different.",
+                skills: ['Formulating questions', 'Choosing data sources', 'Identifying bias', 'Drawing conclusions']
+            },
+            {
+                id: 'D5_MODE', label: 'Mode &\nMedian', pillar: 'Data', domain: 'Data', phase: 'Inter', color: '#d29922', level: 6,
+                why: "Finding the 'typical' value; summarizing a large set with a single point of reference.",
+                gap: "Confuses Mode (most) with Median (middle); fails to put the numbers in order before finding median.",
+                fix: "Card Order: Give students cards with numbers; they must physically stand in order to find the person in the middle.",
+                skills: ['Finding mode', 'Finding median', 'Organizing data sets', 'Comparing datasets']
+            },
+            {
+                id: 'D6_MEAN', label: 'Mean\n(Average)', pillar: 'Data', domain: 'Data', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Mathematical balance; the point where every value contributes equally to the center.",
+                gap: "Thinks the average must be one of the numbers in the set; struggles with the division step.",
+                fix: "Cube Leveling: Build 5 towers of 2, 4, 6, 8, 10; move the cubes until all towers are the same height.",
+                skills: ['Calculating mean', 'Sum ÷ count', 'Comparing averages', 'Choosing appropriate average']
+            },
+            {
+                id: 'D6_PIE', label: 'Pie Charts', pillar: 'Data', domain: 'Data', phase: 'Inter', color: '#d29922', level: 7,
+                why: "Representing parts of a whole; visualizing proportion and relative significance.",
+                gap: "Cannot see the difference between a 25% slice and a 33% slice; confuses angle with quantity.",
+                fix: "Hula-Hoop Pie: Use a hula-hoop on the floor and divide it with jump ropes to represent class data.",
+                skills: ['Reading pie charts', 'Fractions of whole', 'Comparing sectors', 'Percent in pie charts']
+            },
+            {
+                id: 'D7_PROB', label: 'Basic\nProbability', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Quantifying uncertainty; the logic of predicting what might happen.",
+                gap: "Thinks 'I haven't rolled a 6 in a while, so it MUST come next'; confuses chance with 'luck'.",
+                fix: "Coint-Toss Marathon: Flip a coin 50 times; record tallies and see how close it gets to 50/50.",
+                skills: ['Certain/Possible/Impossible', 'Experimental probability', 'Probability as fraction', 'Prediction']
+            },
+            {
+                id: 'D7_SUMMARY', label: 'Summarising\nData', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 8,
+                why: "Condensing information for decision making; the final step of data investigation.",
+                gap: "Cannot choose the right type of graph for the data (uses a pie chart for time-series data).",
+                fix: "Data Storyteller: Write a short paragraph explaining what a graph actually 'means' for the real world.",
+                skills: ['All three averages', 'Range', 'Choosing representations', 'Data interpretation']
+            },
+            {
+                id: 'D8_RANGE', label: 'Range &\nOutliers', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Understanding spread and abnormality; how much do the extremes affect the average?",
+                gap: "Ignores the 'outlier' (the weird number) when calculating; fails to see the gap between min and max.",
+                fix: "Height Chart: Measure the class; find the shortest and tallest; discuss how one 'giant' would change the mean.",
+                skills: ['Calculating range', 'Identifying outliers', 'Effect on mean/median', 'Data spread']
+            },
+            {
+                id: 'D8_PROBADV', label: 'Probability\nAdvanced', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 9,
+                why: "Refining the predictions; moving from 'maybe' to '1 in 4 chance'.",
+                gap: "Struggles with dependent events (not putting the marble back in the bag).",
+                fix: "Tree Diagrams: Draw the 'branches' of every possible outcome; multiply the probabilities along the path.",
+                skills: ['Relative frequency', 'Probability scale 0-1', 'Experimental vs Theoretical', 'Tree diagrams']
+            },
+            {
+                id: 'D9_HISTO', label: 'Histograms', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 10,
+                why: "Visualizing density in continuous data; seeing where most of the truth lies.",
+                gap: "Draws gaps between bars (like a bar graph); fails to use class intervals correctly.",
+                fix: "Sort by Decade: Use a list of 100 ages; group into 0-10, 11-20, etc.; build the bars touching each other.",
+                skills: ['Grouped data', 'Class intervals', 'Drawing histograms', 'Bar graph vs histogram']
+            },
+            {
+                id: 'D9_SCATTER', label: 'Scatter Plots', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 10,
+                why: "The birth of correlation; seeing if one thing actually causes another.",
+                gap: "Tries to connect every dot with a jagged line; fails to see the 'trend' or 'direction' of the cloud.",
+                fix: "Arm Span vs Height: Measure both for every student; plot on a grid; draw one straight line through the 'center'.",
+                skills: ['Plotting bivariate data', 'Identifying correlation', 'Positive/Negative/None', 'Line of best fit']
+            },
+            {
+                id: 'D9_INTERPRET', label: 'Data\nInterpretation', pillar: 'Data', domain: 'Data', phase: 'Senior', color: '#f78166', level: 10,
+                why: "The ultimate defense against misinformation; understanding how numbers can be used to manipulate.",
+                gap: "Believes a graph just because it looks professional; fails to check the y-axis for manipulation.",
+                fix: "Fake News Analysis: Find a misleading graph in the news; redraft it to show the real, honest truth.",
+                skills: ['Critical analysis', 'Misleading statistics', 'Drawing conclusions', 'Communicating findings']
+            },
+        ];
+
+        const atomizedEdges = [
+            // NUMBERS
+            { from: 'NR_1TO1', to: 'NR_RECOG' }, { from: 'NR_1TO1', to: 'NR_COMPARE' },
+            { from: 'NR_RECOG', to: 'N1_BONDS10' }, { from: 'NR_COMPARE', to: 'N1_BONDS10' },
+            { from: 'N1_BONDS10', to: 'N1_ADDSUBT' }, { from: 'N1_ADDSUBT', to: 'N2_BONDS20' },
+            { from: 'N2_BONDS20', to: 'N2_PLACE' }, { from: 'N2_PLACE', to: 'N3_TIMES' },
+            { from: 'N3_TIMES', to: 'N3_SHARING' }, { from: 'N3_SHARING', to: 'N4_DIV' },
+            { from: 'N3_TIMES', to: 'N4_FACTOR' }, { from: 'N4_FACTOR', to: 'N4_FRAC' },
+            { from: 'N4_FRAC', to: 'N5_DECIMAL' }, { from: 'N4_FRAC', to: 'N5_FRACOP' },
+            { from: 'N5_DECIMAL', to: 'N6_PERCENT' }, { from: 'N5_FRACOP', to: 'N6_RATIO' },
+            { from: 'N2_PLACE', to: 'N7_INTEGER' }, { from: 'N6_PERCENT', to: 'N7_COMMON' },
+            { from: 'N3_TIMES', to: 'N8_EXPONENT' }, { from: 'N7_INTEGER', to: 'N8_RATIONAL' },
+            { from: 'N4_FACTOR', to: 'N9_FACTOR' }, { from: 'N8_EXPONENT', to: 'N9_FACTOR' },
+            // PATTERNS
+            { from: 'PR_COPY', to: 'P1_CREATE' }, { from: 'P1_CREATE', to: 'P2_NUMBER' },
+            { from: 'P2_NUMBER', to: 'P3_GEOMETRIC' }, { from: 'P3_GEOMETRIC', to: 'P4_INOUT' },
+            { from: 'P4_INOUT', to: 'P5_VARIABLE' }, { from: 'P5_VARIABLE', to: 'P6_EQUATION' },
+            { from: 'P6_EQUATION', to: 'P7_LINEAR' }, { from: 'P6_EQUATION', to: 'P7_FUNCTION' },
+            { from: 'P7_LINEAR', to: 'P8_SOLVE' }, { from: 'P5_VARIABLE', to: 'P8_EXPRESS' },
+            { from: 'P8_SOLVE', to: 'P9_SIMULT' }, { from: 'P8_EXPRESS', to: 'P9_FACTORISE' },
+            { from: 'P7_LINEAR', to: 'P9_GRAPHS' },
+            // SPACE & SHAPE
+            { from: 'SR_DIR', to: 'S1_POSITION' }, { from: 'SR_VIEW', to: 'SR_SHAPE' },
+            { from: 'SR_SHAPE', to: 'S1_2DSHAPE' }, { from: 'S1_POSITION', to: 'S1_2DSHAPE' },
+            { from: 'S1_2DSHAPE', to: 'S2_PROPERTY' }, { from: 'S2_PROPERTY', to: 'S3_3DPROP' },
+            { from: 'S3_3DPROP', to: 'S4_SYMM' }, { from: 'S1_POSITION', to: 'S4_GRID' },
+            { from: 'S4_SYMM', to: 'S5_VIEWS' }, { from: 'S3_3DPROP', to: 'S6_ANGLES' },
+            { from: 'S6_ANGLES', to: 'S6_CLASSIFY' }, { from: 'S4_GRID', to: 'S7_COORD' },
+            { from: 'S4_SYMM', to: 'S7_TRANS' }, { from: 'S7_COORD', to: 'S7_TRANS' },
+            { from: 'S6_ANGLES', to: 'S8_CONSTR' }, { from: 'S6_ANGLES', to: 'S8_PYTHAG' },
+            { from: 'S6_ANGLES', to: 'S8_LINES' }, { from: 'S7_TRANS', to: 'S9_TRANS' },
+            { from: 'S7_COORD', to: 'S9_TRANS' }, { from: 'S8_LINES', to: 'S9_PROOF' },
+            { from: 'S6_CLASSIFY', to: 'S9_SIMILAR' }, { from: 'S8_CONSTR', to: 'S9_PROOF' },
+            // MEASUREMENT
+            { from: 'MR_COMPARE', to: 'M1_NONSTAND' }, { from: 'MR_TIME', to: 'M1_CLOCK' },
+            { from: 'M1_NONSTAND', to: 'M2_LENGTH' }, { from: 'M1_CLOCK', to: 'M2_TIME' },
+            { from: 'M2_LENGTH', to: 'M2_MONEY' }, { from: 'M2_LENGTH', to: 'M3_MASS' },
+            { from: 'M2_LENGTH', to: 'M3_CAPACITY' }, { from: 'M2_TIME', to: 'M3_TIMEADV' },
+            { from: 'M3_MASS', to: 'M4_CONVERT' }, { from: 'M3_CAPACITY', to: 'M4_CONVERT' },
+            { from: 'M2_LENGTH', to: 'M4_PERIM' }, { from: 'M3_TIMEADV', to: 'M4_TIMEELAP' },
+            { from: 'M4_PERIM', to: 'M5_AREA' }, { from: 'M4_TIMEELAP', to: 'M5_TIME24' },
+            { from: 'M4_CONVERT', to: 'M5_TEMP' }, { from: 'M5_AREA', to: 'M6_AREATRI' },
+            { from: 'M4_CONVERT', to: 'M6_CONVERT' }, { from: 'M4_PERIM', to: 'M7_CIRCUM' },
+            { from: 'M5_AREA', to: 'M7_AREACIRCLE' }, { from: 'M5_AREA', to: 'M8_VOLUME' },
+            { from: 'M6_AREATRI', to: 'M8_SURFACE' }, { from: 'M8_VOLUME', to: 'M9_VOLCY' },
+            { from: 'M7_AREACIRCLE', to: 'M9_VOLCY' }, { from: 'M8_SURFACE', to: 'M9_SURFADV' },
+            // DATA HANDLING
+            { from: 'DR_SORT', to: 'D1_COLLECT' }, { from: 'D1_COLLECT', to: 'D2_PICTOGRAPH' },
+            { from: 'D2_PICTOGRAPH', to: 'D3_TALLY' }, { from: 'D3_TALLY', to: 'D4_BARGRAPH' },
+            { from: 'D3_TALLY', to: 'D4_QUESTIONS' }, { from: 'D4_BARGRAPH', to: 'D5_MODE' },
+            { from: 'D5_MODE', to: 'D6_MEAN' }, { from: 'D4_BARGRAPH', to: 'D6_PIE' },
+            { from: 'D5_MODE', to: 'D7_PROB' }, { from: 'D6_MEAN', to: 'D7_SUMMARY' },
+            { from: 'D7_SUMMARY', to: 'D8_RANGE' }, { from: 'D7_PROB', to: 'D8_PROBADV' },
+            { from: 'D4_BARGRAPH', to: 'D9_HISTO' }, { from: 'D8_RANGE', to: 'D9_INTERPRET' },
+            { from: 'S7_COORD', to: 'D9_SCATTER' },
+            // CROSS-DOMAIN
+            { from: 'NR_1TO1', to: 'DR_SORT' }, { from: 'N4_FRAC', to: 'D6_PIE' },
+            { from: 'N6_PERCENT', to: 'D6_PIE' }, { from: 'N5_DECIMAL', to: 'M4_CONVERT' },
+            { from: 'N3_TIMES', to: 'M5_AREA' }, { from: 'N4_FRAC', to: 'M6_AREATRI' },
+            { from: 'P7_LINEAR', to: 'S7_COORD' }, { from: 'P7_LINEAR', to: 'D9_SCATTER' },
+            { from: 'S5_VIEWS', to: 'M8_VOLUME' }, { from: 'S3_3DPROP', to: 'M8_SURFACE' },
+            { from: 'N7_INTEGER', to: 'S7_COORD' }, { from: 'N6_RATIO', to: 'S9_SIMILAR' },
+            { from: 'P9_FACTORISE', to: 'N9_FACTOR' },
+            // CONNECTIVE TISSUE (Cross-Domain Jumps)
+            { from: 'N2_PLACE', to: 'P2_NUMBER' },
+            { from: 'N1_ADDSUBT', to: 'S1_POSITION' },
+            { from: 'NR_COMPARE', to: 'MR_COMPARE' },
+            { from: 'N1_BONDS10', to: 'D1_COLLECT' },
+            { from: 'P3_GEOMETRIC', to: 'S1_2DSHAPE' },
+            { from: 'P4_INOUT', to: 'M4_CONVERT' },
+            { from: 'S2_PROPERTY', to: 'M4_PERIM' },
+            { from: 'M2_TIME', to: 'D3_TALLY' },
+            { from: 'M2_MONEY', to: 'N5_DECIMAL' },
+            { from: 'D9_SCATTER', to: 'P7_LINEAR' }
+        ];
+
+        // Pillar color mapping
+        const pillarColors = {
+            'Core': '#58a6ff',      // Number Sense & Logic (Blue)
+            'Algebra': '#a371f7',   // Relationship & Function (Purple)
+            'Physical': '#3fb950',  // Spatial & Measurement (Green)
+            'Data': '#f78166'       // Analysis & Prediction (Orange)
+        };
+
+        // Phase color mapping (for tags)
+        const phaseColors = {
+            'Senior': '#f85149',
+            'Inter': '#d29922',
+            'Found': '#3fb950',
+            'R': '#bc8cff'
+        };
+
+        // Domain colors (for tags)
+        const domainColors = {
+            'Numbers': '#58a6ff',
+            'Patterns': '#a371f7',
+            'Space': '#3fb950',
+            'Measurement': '#d29922',
+            'Data': '#f78166'
+        };
+
+        // Initialize VIS datasets
+        const nodes = new vis.DataSet(atomizedNodes.map(n => ({
+            id: n.id,
+            label: n.label,
+            color: {
+                background: pillarColors[n.pillar] || n.color,
+                border: pillarColors[n.pillar] || n.color,
+                highlight: { background: '#fff', border: '#58a6ff' }
+            },
+            font: { color: '#fff', size: 12 },
+            shape: 'dot',
+            size: 18 + (n.level * 2)
+        })));
+
+        const edges = new vis.DataSet(atomizedEdges.map((e, i) => ({
+            id: 'e' + i,
+            from: e.from,
+            to: e.to,
+            color: { color: '#30363d', highlight: '#58a6ff' },
+            width: 1.5,
+            arrows: { to: { enabled: true, scaleFactor: 0.5 } }
+        })));
+
+        // Update stats
+        document.getElementById('node-count').textContent = atomizedNodes.length;
+        document.getElementById('edge-count').textContent = atomizedEdges.length;
+
+        // Create Network
+        const container = document.getElementById('mynetwork');
+        const network = new vis.Network(container, { nodes, edges }, {
+            physics: {
+                forceAtlas2Based: {
+                    gravitationalConstant: -80,
+                    centralGravity: 0.01,
+                    springLength: 120,
+                    springConstant: 0.08
+                },
+                solver: 'forceAtlas2Based',
+                stabilization: { iterations: 150 }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200
+            }
+        });
+
+        // Click handler
+        network.on("click", function (params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                highlightTrace(nodeId);
+                updatePanel(nodeId);
+            } else {
+                resetHighlight();
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SEARCH WITH AUTOCOMPLETE
+        // ═══════════════════════════════════════════════════════════════════════
+        const searchInput = document.getElementById('search-input');
+        const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+        let selectedIndex = -1;
+
+        searchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            if (query.length < 2) {
+                autocompleteDropdown.classList.remove('active');
+                return;
+            }
+
+            const matches = atomizedNodes.filter(node =>
+                node.label.toLowerCase().replace('\n', ' ').includes(query) ||
+                node.id.toLowerCase().includes(query) ||
+                node.skills.some(s => s.toLowerCase().includes(query))
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+                autocompleteDropdown.innerHTML = '<div class="no-results">No topics found</div>';
+            } else {
+                autocompleteDropdown.innerHTML = matches.map((node, index) => `
+                    <div class="autocomplete-item" data-id="${node.id}" data-index="${index}">
+                        <span class="phase-badge" style="background: ${phaseColors[node.phase]}">${node.phase}</span>
+                        <span class="domain-badge">${node.domain}</span>
+                        <span>${node.label.replace('\n', ' ')}</span>
+                    </div>
+                `).join('');
+            }
+
+            autocompleteDropdown.classList.add('active');
+            selectedIndex = -1;
+        });
+
+        searchInput.addEventListener('keydown', function (e) {
+            const items = autocompleteDropdown.querySelectorAll('.autocomplete-item');
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelection(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0) selectNode(items[selectedIndex].dataset.id);
+                else if (items.length) selectNode(items[0].dataset.id);
+            } else if (e.key === 'Escape') {
+                autocompleteDropdown.classList.remove('active');
+            }
+        });
+
+        function updateSelection(items) {
+            items.forEach((item, i) => item.classList.toggle('selected', i === selectedIndex));
+        }
+
+        autocompleteDropdown.addEventListener('click', function (e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectNode(item.dataset.id);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-container')) {
+                autocompleteDropdown.classList.remove('active');
+            }
+        });
+
+        function selectNode(nodeId) {
+            autocompleteDropdown.classList.remove('active');
+            const node = atomizedNodes.find(n => n.id === nodeId);
+            if (node) {
+                searchInput.value = node.label.replace('\n', ' ');
+                network.focus(nodeId, { scale: 1.5, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+                network.selectNodes([nodeId]);
+                highlightTrace(nodeId);
+                updatePanel(nodeId);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // FILTERS
+        // ═══════════════════════════════════════════════════════════════════════
+        const pillarFilter = document.getElementById('pillar-filter');
+        const domainFilter = document.getElementById('domain-filter');
+        const phaseFilter = document.getElementById('phase-filter');
+
+        function applyFilters() {
+            const selectedPillar = pillarFilter.value;
+            const selectedDomain = domainFilter.value;
+            const selectedPhase = phaseFilter.value;
+
+            nodes.forEach(node => {
+                const raw = atomizedNodes.find(n => n.id === node.id);
+                const pillarMatch = selectedPillar === 'all' || raw.pillar === selectedPillar;
+                const domainMatch = selectedDomain === 'all' || raw.domain === selectedDomain;
+                const phaseMatch = selectedPhase === 'all' || raw.phase === selectedPhase;
+                const isVisible = pillarMatch && domainMatch && phaseMatch;
+
+                nodes.update({
+                    id: node.id,
+                    hidden: !isVisible
+                });
+            });
+
+            edges.forEach(edge => {
+                const fromNode = nodes.get(edge.from);
+                const toNode = nodes.get(edge.to);
+                edges.update({
+                    id: edge.id,
+                    hidden: fromNode.hidden || toNode.hidden
+                });
+            });
+
+            // Update visible count
+            const visibleNodes = atomizedNodes.filter(n => {
+                const pillarMatch = selectedPillar === 'all' || n.pillar === selectedPillar;
+                const domainMatch = selectedDomain === 'all' || n.domain === selectedDomain;
+                const phaseMatch = selectedPhase === 'all' || n.phase === selectedPhase;
+                return pillarMatch && domainMatch && phaseMatch;
+            });
+            document.getElementById('node-count').textContent = visibleNodes.length;
+        }
+
+        pillarFilter.addEventListener('change', applyFilters);
+        domainFilter.addEventListener('change', applyFilters);
+        phaseFilter.addEventListener('change', applyFilters);
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // HIGHLIGHT & TRACE
+        // ═══════════════════════════════════════════════════════════════════════
+        function getAncestors(nodeId, found = new Set()) {
+            atomizedEdges.filter(e => e.to === nodeId).forEach(edge => {
+                if (!found.has(edge.from)) {
+                    found.add(edge.from);
+                    getAncestors(edge.from, found);
+                }
+            });
+            return found;
+        }
+
+        function highlightTrace(nodeId) {
+            const trace = getAncestors(nodeId);
+            trace.add(nodeId);
+
+            nodes.forEach(n => {
+                const active = trace.has(n.id);
+                const raw = atomizedNodes.find(x => x.id === n.id);
+                nodes.update({
+                    id: n.id,
+                    color: {
+                        background: active ? raw.color : '#21262d',
+                        border: active ? raw.color : '#30363d'
+                    },
+                    font: { color: active ? '#fff' : '#484f58' }
+                });
+            });
+
+            edges.forEach(e => {
+                const active = trace.has(e.from) && trace.has(e.to);
+                edges.update({
+                    id: e.id,
+                    color: { color: active ? '#58a6ff' : '#21262d' },
+                    width: active ? 2.5 : 1
+                });
+            });
+        }
+
+        function resetHighlight() {
+            nodes.forEach(n => {
+                const raw = atomizedNodes.find(x => x.id === n.id);
+                nodes.update({
+                    id: n.id,
+                    color: { background: raw.color, border: raw.color },
+                    font: { color: '#fff' }
+                });
+            });
+            edges.forEach(e => {
+                edges.update({
+                    id: e.id,
+                    color: { color: '#30363d' },
+                    width: 1.5
+                });
+            });
+            document.getElementById('panel-content').innerHTML = '<div class="panel-placeholder">Select any node in the web to view atomized learning objectives and remediation strategies.</div>';
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // PANEL UPDATE
+        // ═══════════════════════════════════════════════════════════════════════
+        function updatePanel(nodeId) {
+            const d = atomizedNodes.find(n => n.id === nodeId);
+            const prereqs = atomizedEdges.filter(e => e.to === nodeId).map(e => {
+                const node = atomizedNodes.find(n => n.id === e.from);
+                return node ? { id: node.id, label: node.label.replace('\n', ' ') } : null;
+            }).filter(Boolean);
+
+            const gradeDisplay = d.level === 1 ? 'R' : d.level - 1;
+
+            let prereqHTML = '';
+            if (prereqs.length > 0) {
+                prereqHTML = `
+                    <div class="prereq-section">
+                        <span class="section-label">Connections</span>
+                        <div class="prereq-list">
+                            ${prereqs.map(p => `<span class="prereq-chip" onclick="selectNode('${p.id}')">${p.label}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('panel-content').innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <span class="pillar-badge" style="background: ${pillarColors[d.pillar] || '#30363d'}; color: #000;">${(d.pillar || 'Core').toUpperCase()} PATH</span>
+                    <span class="tag" style="background: ${phaseColors[d.phase] || '#30363d'}; color: #fff;">Grade ${gradeDisplay}</span>
+                </div>
+                
+                <h1 class="node-title">${d.label.replace('\n', ' ')}</h1>
+                
+                <span class="section-label">📘 THE "WHY" (CONCEPT)</span>
+                <div class="why-box">${d.why || 'Fundamental concept building block.'}</div>
+
+                <span class="section-label">🔴 THE "GAP" (DIAGNOSTIC)</span>
+                <div class="gap-box">${d.gap || 'Identifying behavioral symptoms and common misconceptions.'}</div>
+
+                <span class="section-label">🛠️ THE "FIX" (REMEDIAL)</span>
+                <div class="fix-box">${d.fix || d.action || 'High-impact, tactile strategy.'}</div>
+
+                <span class="section-label">Atomized micro-skills</span>
+                <div class="micro-skills">
+                    <ul>${d.skills.map(s => `<li>${s}</li>`).join('')}</ul>
+                </div>
+
+                ${prereqHTML}
+            `;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // EXPORT & RESET
+        // ═══════════════════════════════════════════════════════════════════════
+        function resetNetwork() {
+            domainFilter.value = 'all';
+            phaseFilter.value = 'all';
+            searchInput.value = '';
+
+            nodes.forEach(n => {
+                const raw = atomizedNodes.find(x => x.id === n.id);
+                nodes.update({
+                    id: n.id,
+                    hidden: false,
+                    color: { background: raw.color, border: raw.color },
+                    font: { color: '#fff' }
+                });
+            });
+            edges.forEach(e => {
+                edges.update({
+                    id: e.id,
+                    hidden: false,
+                    color: { color: '#30363d' },
+                    width: 1.5
+                });
+            });
+
+            document.getElementById('node-count').textContent = atomizedNodes.length;
+            document.getElementById('panel-content').innerHTML = '<div class="panel-placeholder">Select any node in the web to view atomized learning objectives and remediation strategies.</div>';
+            network.fit({ animation: true });
+            showToast('Network reset', 'success');
+        }
+
+        function exportPNG() {
+            const canvas = container.querySelector('canvas');
+            if (!canvas) {
+                showToast('Unable to export', 'error');
+                return;
+            }
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.fillStyle = '#0a0c12';
+            ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            ctx.drawImage(canvas, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = 'lumen-knowledge-web.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
+            showToast('PNG exported!', 'success');
+        }
+
+        function exportPDF() {
+            const canvas = container.querySelector('canvas');
+            if (!canvas) {
+                showToast('Unable to export', 'error');
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            const imageData = canvas.toDataURL('image/png');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Lumen Knowledge Web - CAPS Mathematics</title>
+                    <style>
+                        body { margin: 20px; font-family: 'Segoe UI', sans-serif; background: #0a0c12; color: #c9d1d9; }
+                        h1 { color: #58a6ff; margin-bottom: 5px; }
+                        p { color: #8b949e; margin-top: 0; }
+                        img { max-width: 100%; border: 1px solid #30363d; border-radius: 8px; margin-top: 20px; }
+                        .stats { display: flex; gap: 30px; margin-top: 20px; }
+                        .stat { text-align: center; }
+                        .stat-value { font-size: 24px; color: #58a6ff; font-weight: bold; }
+                        .stat-label { font-size: 12px; color: #8b949e; }
+                        @media print { body { background: #fff; color: #000; } h1 { color: #1a237e; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>📊 Lumen Knowledge Web</h1>
+                    <p>Complete CAPS Mathematics Curriculum • Grade R to Grade 9</p>
+                    <div class="stats">
+                        <div class="stat"><div class="stat-value">${atomizedNodes.length}</div><div class="stat-label">Nodes</div></div>
+                        <div class="stat"><div class="stat-value">${atomizedEdges.length}</div><div class="stat-label">Connections</div></div>
+                        <div class="stat"><div class="stat-value">5</div><div class="stat-label">Domains</div></div>
+                    </div>
+                    <img src="${imageData}" alt="Knowledge Web">
+                    <script>window.onload = function() { window.print(); }<\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            showToast('PDF dialog opened!', 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</body>
+
+</html>
