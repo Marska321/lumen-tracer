@@ -26,6 +26,17 @@ Expires At:  ${new Date(expires).toLocaleString()}
 LINK:
 ${link}
 ---------------------------------------------------
+
+USER-FRIENDLY SHARING TEMPLATE:
+---------------------------------------------------
+Hey! You've been invited to explore the Lumen Tracer Knowledge Web.
+This link will be active for the next 24 hours:
+
+🔗 Access Now: ${link}
+
+Explore the CAPS Mathematics curriculum from Grade R to 9 with
+interactive data visualizations and remediation strategies.
+---------------------------------------------------
 `;
 
 console.log(output);
