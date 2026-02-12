@@ -1,6 +1,10 @@
 export default async (request, context) => {
   const url = new URL(request.url);
-  const secret = Deno.env.get("SITE_SECRET");
+  const secret = Deno.env.get("SITE_SECRET")?.trim();
+
+  if (!secret) {
+    return new Response("Configuration Error: SITE_SECRET is not defined in Netlify environment variables.", { status: 500 });
+  }
 
   // 1. Check if they already have a valid session cookie
   const cookie = context.cookies.get("lumen_access");
@@ -30,7 +34,9 @@ export default async (request, context) => {
   const expectedSignature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
   if (signature !== expectedSignature) {
-    return new Response("Access Denied: Invalid secure link.", { status: 403 });
+    // For debugging purposes, we could show a hint, but it's better to keep it secure.
+    // However, since this is a private project, we'll provide a bit more info for the user.
+    return new Response(`Access Denied: Invalid secure link. (Signature Mismatch)`, { status: 403 });
   }
 
   // 5. Success! Give them a 24-hour cookie so they can browse normally
