@@ -14,8 +14,14 @@ const expires = Date.now() + oneDayInMs;
 const dataToSign = expires + secret;
 const signature = crypto.createHash('sha256').update(dataToSign).digest('hex');
 
-// 3. Construct Link
-const link = `${baseUrl}/?expires=${expires}&sig=${signature}`;
+// 3. Create Base64 Token
+// We combine expires and signature into a single string "expires:signature" and base64 encode it
+// This makes the URL look cleaner and less "phishy" to filters like Bitly
+const tokenPayload = `${expires}:${signature}`;
+const token = Buffer.from(tokenPayload).toString('base64');
+
+// 4. Construct Link
+const link = `${baseUrl}/?token=${token}`;
 
 const output = `---------------------------------------------------
 GENERATED SECURE LINK (Valid for 24 Hours)
@@ -23,7 +29,7 @@ GENERATED SECURE LINK (Valid for 24 Hours)
 Secret Used: ${secret}
 Expires At:  ${new Date(expires).toLocaleString()}
 ---------------------------------------------------
-LINK:
+LINK (New Token Format):
 ${link}
 ---------------------------------------------------
 

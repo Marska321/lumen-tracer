@@ -13,10 +13,26 @@ export default async (request, context) => {
   }
 
   // 2. If no cookie, look for the special URL parameters
-  const expires = url.searchParams.get("expires");
-  const signature = url.searchParams.get("sig");
+  let expires = url.searchParams.get("expires");
+  let signature = url.searchParams.get("sig");
+  const token = url.searchParams.get("token");
 
-  // If there's no token, block access
+  // Support new Base64 Token format (avoids Bitly warnings)
+  if (token) {
+    try {
+      const decoded = atob(token);
+      const parts = decoded.split(':');
+      if (parts.length === 2) {
+        expires = parts[0];
+        signature = parts[1];
+      }
+    } catch (e) {
+      // Invalid base64, fall through to block access
+      console.log("Invalid token format");
+    }
+  }
+
+  // If there's no token (legacy or new), block access
   if (!expires || !signature) {
     return new Response("Access Denied: You need a special link to view this site.", { status: 401 });
   }
@@ -51,5 +67,6 @@ export default async (request, context) => {
   // Redirect to the clean URL (removes the ugly tracking codes from the address bar)
   url.searchParams.delete("expires");
   url.searchParams.delete("sig");
+  url.searchParams.delete("token");
   return Response.redirect(url, 302);
 };

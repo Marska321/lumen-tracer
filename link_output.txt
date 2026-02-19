@@ -2,10 +2,10 @@
 GENERATED SECURE LINK (Valid for 24 Hours)
 ---------------------------------------------------
 Secret Used: LumenTracerSecret2024!
-Expires At:  2026/02/13, 11:15:47
+Expires At:  2026/02/20, 10:41:18
 ---------------------------------------------------
-LINK:
-https://lumen-tracer.netlify.app/?expires=1770974147943&sig=1a44cab10b737af9e0e20f454769de423f86d3ae52dc3a0ad9dfb2325e19eb8c
+LINK (New Token Format):
+https://lumen-tracer.netlify.app/?token=MTc3MTU3Njg3ODMwNjpiNjQzZGZlYjRhNjgyZmI2Y2ZlNWM1ZWNjOTRmM2JlNzJlMWIzNDM3NDc0ZjM4YzhhYmMzY2QxM2U5ZjdlNDc1
 ---------------------------------------------------
 
 USER-FRIENDLY SHARING TEMPLATE:
@@ -13,7 +13,7 @@ USER-FRIENDLY SHARING TEMPLATE:
 Hey! You've been invited to explore the Lumen Tracer Knowledge Web.
 This link will be active for the next 24 hours:
 
-🔗 Access Now: https://lumen-tracer.netlify.app/?expires=1770974147943&sig=1a44cab10b737af9e0e20f454769de423f86d3ae52dc3a0ad9dfb2325e19eb8c
+🔗 Access Now: https://lumen-tracer.netlify.app/?token=MTc3MTU3Njg3ODMwNjpiNjQzZGZlYjRhNjgyZmI2Y2ZlNWM1ZWNjOTRmM2JlNzJlMWIzNDM3NDc0ZjM4YzhhYmMzY2QxM2U5ZjdlNDc1
 
 Explore the CAPS Mathematics curriculum from Grade R to 9 with
 interactive data visualizations and remediation strategies.
