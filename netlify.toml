@@ -1,3 +1,7 @@
 [[edge_functions]]
   function = "check-access"
   path = "/*"
+
+[[edge_functions]]
+  function = "shortener"
+  path = "/go/*"
