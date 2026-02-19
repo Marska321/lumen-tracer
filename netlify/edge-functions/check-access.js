@@ -1,9 +1,10 @@
 export default async (request, context) => {
   const url = new URL(request.url);
-  const secret = Deno.env.get("SITE_SECRET")?.trim();
+  // Use the same default secret as the local generator script for fallback
+  const secret = (Deno.env.get("SITE_SECRET") || 'LumenTracerSecret2024!').trim();
 
   if (!secret) {
-    return new Response("Configuration Error: SITE_SECRET is not defined in Netlify environment variables.", { status: 500 });
+    return new Response("Configuration Error: SITE_SECRET is not defined.", { status: 500 });
   }
 
   // 1. Check if they already have a valid session cookie
