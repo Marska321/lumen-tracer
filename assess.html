@@ -830,7 +830,7 @@ function startAssessment(){
     learnerName:learnerName,
     selectedGrade:state.selectedGrade,sessionId:Date.now().toString(36),startTime:Date.now(),
     queue:buildInitialQueue(state.selectedGrade),currentIdx:0,scores:{},currentProbeType:'context',passedFirstProbe:false,
-    firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
+    questionStartTime:null,firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
   saveSession();
   showScreen('screen-assess');
   renderCurrentQuestion();
@@ -909,6 +909,7 @@ function renderCurrentQuestion(){
   }
 
   // Animate
+  state.questionStartTime = Date.now();
   card.style.animation='none';card.offsetHeight;card.style.animation='slide-in .35s cubic-bezier(.4,0,.2,1)';
 }
 
@@ -918,6 +919,8 @@ function renderCurrentQuestion(){
 function selectOption(optIdx){
   if(state.answered)return;
   state.answered=true;
+  
+  const timeTaken = state.questionStartTime ? Math.round((Date.now() - state.questionStartTime) / 1000) : 0;
   state.selectedOption=optIdx;
 
   const nodeId=state.queue[state.currentIdx];
@@ -964,7 +967,7 @@ function selectOption(optIdx){
       banner.className='feedback-banner wrong show';
     }
 
-    state.scores[nodeId]={result:finalResult,score:score};
+    state.scores[nodeId]={result:finalResult,score:score,timeTaken:timeTaken};
     if(shouldTraverse) enqueuePrereqs(nodeId);
     saveSession();
     
@@ -988,6 +991,8 @@ function selectOption(optIdx){
 function answerDontKnow(){
   if(state.answered)return;
   state.answered=true;
+  
+  const timeTaken = state.questionStartTime ? Math.round((Date.now() - state.questionStartTime) / 1000) : 0;
   const nodeId=state.queue[state.currentIdx];
   const qData=qMap[nodeId];
   const activeQuestionData=qData&&qData.probes?qData.probes.find(p=>p.t===state.currentProbeType):qData;
@@ -1008,12 +1013,12 @@ function answerDontKnow(){
     document.getElementById('btn-next').textContent='Test Calculation →';
   }else{
     if(!state.passedFirstProbe){
-      state.scores[nodeId]={result:'skipped',score:0.0};
+      state.scores[nodeId]={result:'skipped',score:0.0,timeTaken:timeTaken};
       enqueuePrereqs(nodeId);
       banner.textContent='✋ Gap confirmed. Pre-requisite nodes added to the diagnostic queue.';
       banner.className='feedback-banner skipped show';
     }else{
-      state.scores[nodeId]={result:'wrong',score:0.0};
+      state.scores[nodeId]={result:'wrong',score:0.0,timeTaken:timeTaken};
       enqueuePrereqs(nodeId);
       banner.textContent='❌ calculation skipped after passing word problem. Gap confirmed (false positive caught!).';
       banner.className='feedback-banner wrong show';
