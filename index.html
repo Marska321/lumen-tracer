@@ -1791,35 +1791,113 @@
                 return;
             }
 
+            // 1. Grab the current content of the right panel
+            const panelContent = document.getElementById('panel-content').innerHTML;
+
             const printWindow = window.open('', '_blank');
             const imageData = canvas.toDataURL('image/png');
+            
+            // 2. Inject both the graph and the panel content into a print-friendly layout
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Lumen Knowledge Web - CAPS Mathematics</title>
+                    <title>Lumen Diagnostic Report</title>
                     <style>
-                        body { margin: 20px; font-family: 'Segoe UI', sans-serif; background: #0a0c12; color: #c9d1d9; }
-                        h1 { color: #58a6ff; margin-bottom: 5px; }
-                        p { color: #8b949e; margin-top: 0; }
-                        img { max-width: 100%; border: 1px solid #30363d; border-radius: 8px; margin-top: 20px; }
-                        .stats { display: flex; gap: 30px; margin-top: 20px; }
+                        /* Base Print Styles */
+                        body { 
+                            margin: 20px; 
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                            background: #ffffff; 
+                            color: #000000; 
+                        }
+                        h1 { color: #1a237e; font-size: 22px; margin-bottom: 5px; }
+                        p { color: #555; margin-top: 0; font-size: 13px; }
+                        
+                        /* Layout */
+                        .print-container {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 30px;
+                        }
+                        
+                        .graph-section { text-align: center; }
+                        
+                        img { 
+                            max-width: 100%; 
+                            max-height: 450px; 
+                            border: 1px solid #e1e4e8; 
+                            border-radius: 8px; 
+                            object-fit: contain;
+                            margin-top: 15px;
+                        }
+                        
+                        .stats { display: flex; gap: 30px; justify-content: center; margin-top: 10px; }
                         .stat { text-align: center; }
-                        .stat-value { font-size: 24px; color: #58a6ff; font-weight: bold; }
-                        .stat-label { font-size: 12px; color: #8b949e; }
-                        @media print { body { background: #fff; color: #000; } h1 { color: #1a237e; } }
+                        .stat-value { font-size: 20px; color: #1a237e; font-weight: bold; }
+                        .stat-label { font-size: 11px; color: #666; text-transform: uppercase; }
+
+                        /* Panel Content Styles Adapted for White Paper */
+                        .report-section {
+                            width: 100%;
+                            background: #f8f9fa;
+                            padding: 24px;
+                            border-radius: 8px;
+                            border: 1px solid #e1e4e8;
+                            box-sizing: border-box;
+                        }
+                        
+                        .node-title { color: #000; margin: 0 0 15px 0; font-size: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+                        .section-label { font-size: 12px; font-weight: bold; color: #333 !important; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; }
+                        
+                        /* Standard Panel Boxes */
+                        .why-box { background: #e3f2fd; border-left: 3px solid #2196f3; padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 13px; color: #000; }
+                        .gap-box { background: #ffebee; border-left: 3px solid #f44336; padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 13px; color: #000; }
+                        .fix-box { background: #e8f5e9; border-left: 3px solid #4caf50; padding: 12px; border-radius: 4px; margin-bottom: 12px; font-size: 13px; color: #000; }
+                        .micro-skills { background: #ffffff; padding: 12px; border-radius: 4px; border: 1px solid #ccc; border-left: 3px solid #9e9e9e; margin-bottom: 15px; font-size: 13px; color: #000; }
+                        .micro-skills ul { margin: 0; padding-left: 18px; color: #000; }
+                        
+                        /* Diagnostic Report Specific Overrides */
+                        .prereq-chip {
+                            color: #000 !important; /* Force darker text for contrast on paper */
+                            font-weight: 600 !important;
+                            border-width: 2px !important;
+                        }
+                        .pillar-badge {
+                            background: #e1e4e8 !important;
+                            color: #000 !important;
+                            border-color: #ccc !important;
+                        }
+
+                        /* Page Break Rules */
+                        @media print {
+                            body { margin: 0; }
+                            .report-section { page-break-inside: avoid; }
+                        }
                     </style>
                 </head>
                 <body>
-                    <h1>📊 Lumen Knowledge Web</h1>
-                    <p>Complete CAPS Mathematics Curriculum • Grade R to Grade 9</p>
-                    <div class="stats">
-                        <div class="stat"><div class="stat-value">${atomizedNodes.length}</div><div class="stat-label">Nodes</div></div>
-                        <div class="stat"><div class="stat-value">${atomizedEdges.length}</div><div class="stat-label">Connections</div></div>
-                        <div class="stat"><div class="stat-value">5</div><div class="stat-label">Domains</div></div>
+                    <div class="print-container">
+                        <div class="graph-section">
+                            <h1>📊 Lumen Assessment Snapshot</h1>
+                            <p>CAPS Mathematics Curriculum • Student Progress Map</p>
+                            <div class="stats">
+                                <div class="stat"><div class="stat-value">${atomizedNodes.length}</div><div class="stat-label">Total Nodes</div></div>
+                                <div class="stat"><div class="stat-value">5</div><div class="stat-label">Domains</div></div>
+                            </div>
+                            <img src="${imageData}" alt="Knowledge Web Snapshot">
+                        </div>
+                        
+                        <div class="report-section">
+                            ${panelContent}
+                        </div>
                     </div>
-                    <img src="${imageData}" alt="Knowledge Web">
-                    <script>window.onload = function() { window.print(); }<\/script>
+                    <script>
+                        window.onload = function() { 
+                            // Slight delay ensures the image is fully rendered before opening the print dialog
+                            setTimeout(function() { window.print(); }, 500); 
+                        }
+                    <\/script>
                 </body>
                 </html>
             `);
