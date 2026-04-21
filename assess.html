@@ -275,9 +275,9 @@ const CURRICULUM_NODES=[
   {id:'N2_PLACE', label:'Place Value (Tens & Units)',domain:'Numbers',    phase:'Found', grade:2,level:3,  skills:['Bundling into tens','Expanded notation','Representing 2-digit numbers','Value vs digit']},
   {id:'N3_TIMES', label:'Multiplication Tables',    domain:'Numbers',    phase:'Found', grade:3,level:4,  skills:['Skip counting patterns','2x, 5x, 10x, 3x, 4x tables','Array representations','Commutativity']},
   {id:'N3_SHARING',label:'Division as Sharing',     domain:'Numbers',    phase:'Found', grade:3,level:4,  skills:['Equal sharing','Grouping','Remainders concept','Inverse of multiplication']},
-  {id:'N4_DIV',   label:'Long Division',             domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Estimation quotients','Subtraction regrouping','Recording algorithm','Checking with multiplication']},
-  {id:'N4_FRAC',  label:'Fractions',                 domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Equal parts of whole','Numerator/Denominator meaning','Equivalent fractions','Comparing fractions']},
-  {id:'N4_FACTOR',label:'Factors & Multiples',       domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Factor pairs','Prime numbers','Common factors','LCM basics']},
+  {id:'N4_DIV',   label:'Long Division',             domain:'Numbers',    phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Estimation quotients','Subtraction regrouping','Recording algorithm','Checking with multiplication']},
+  {id:'N4_FRAC',  label:'Fractions',                 domain:'Numbers',    phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Equal parts of whole','Numerator/Denominator meaning','Equivalent fractions','Comparing fractions']},
+  {id:'N4_FACTOR',label:'Factors & Multiples',       domain:'Numbers',    phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Factor pairs','Prime numbers','Common factors','LCM basics']},
   {id:'N5_DECIMAL',label:'Decimals',                 domain:'Numbers',    phase:'Inter', grade:5,level:6,  skills:['Tenths and hundredths','Decimal place value','Fraction-decimal conversion','Ordering decimals']},
   {id:'N5_FRACOP',label:'Fraction Operations',       domain:'Numbers',    phase:'Inter', grade:5,level:6,  skills:['Add/subtract like denominators','Unlike denominators intro','Mixed numbers','Fraction of quantity']},
   {id:'N6_PERCENT',label:'Percentages',              domain:'Numbers',    phase:'Inter', grade:6,level:7,  skills:['Percent = per 100','Fraction-decimal-percent conversion','Finding % of amount','Discount/increase']},
@@ -292,7 +292,7 @@ const CURRICULUM_NODES=[
   {id:'P1_CREATE',label:'Create Own Patterns',       domain:'Patterns',   phase:'Found', grade:1,level:2,  skills:['ABB, AAB, ABC patterns','Describe the rule verbally','Identify pattern errors','Physical patterns']},
   {id:'P2_NUMBER',label:'Number Patterns',           domain:'Patterns',   phase:'Found', grade:2,level:3,  skills:['Skip counting sequences','+2, +5, +10 patterns','Finding missing terms','Describing rules']},
   {id:'P3_GEOMETRIC',label:'Geometric Patterns',     domain:'Patterns',   phase:'Found', grade:3,level:4,  skills:['Growing patterns','Shrinking patterns','Pattern tables','Predicting next terms']},
-  {id:'P4_INOUT', label:'Input-Output Tables',       domain:'Patterns',   phase:'Inter', grade:4,level:5,  skills:['Function machines concept','Finding the rule','Completing tables','Multiple operations']},
+  {id:'P4_INOUT', label:'Input-Output Tables',       domain:'Patterns',   phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Function machines concept','Finding the rule','Completing tables','Multiple operations']},
   {id:'P5_VARIABLE',label:'Variables & Expressions', domain:'Patterns',   phase:'Inter', grade:5,level:6,  skills:['Letter symbols for unknowns','Substitution','Writing expressions','Evaluating expressions']},
   {id:'P6_EQUATION',label:'Simple Equations',        domain:'Patterns',   phase:'Inter', grade:6,level:7,  skills:['Balancing equations','Solving one-step equations','Checking solutions','Word problem to equation']},
   {id:'P7_LINEAR',label:'Linear Relationships',      domain:'Patterns',   phase:'Senior',grade:7,level:8,  skills:['Graphing on Cartesian plane','Table-to-graph conversion','y = mx + c concept','Interpreting gradient']},
@@ -310,8 +310,8 @@ const CURRICULUM_NODES=[
   {id:'S1_2DSHAPE',label:'2D Shape Recognition',     domain:'Space',      phase:'Found', grade:1,level:2,  skills:['Circle, triangle, square, rectangle','Sides and corners','Sort by attributes','Find in environment']},
   {id:'S2_PROPERTY',label:'2D Shape Properties',     domain:'Space',      phase:'Found', grade:2,level:3,  skills:['Count sides and vertices','Describe shapes','Compare shapes','Right angles awareness']},
   {id:'S3_3DPROP',label:'2D vs 3D Properties',       domain:'Space',      phase:'Found', grade:3,level:4,  skills:['Faces, edges, vertices','Prisms vs pyramids','Polygon identification','Nets of 3D shapes']},
-  {id:'S4_SYMM',  label:'Symmetry',                  domain:'Space',      phase:'Inter', grade:4,level:5,  skills:['Lines of symmetry','Reflectional symmetry','Creating symmetric patterns','Symmetry in nature']},
-  {id:'S4_GRID',  label:'Grid Coordinates',          domain:'Space',      phase:'Inter', grade:4,level:5,  skills:['Reading grid maps','Locating positions','Giving directions','Simple coordinates']},
+  {id:'S4_SYMM',  label:'Symmetry',                  domain:'Space',      phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Lines of symmetry','Reflectional symmetry','Creating symmetric patterns','Symmetry in nature']},
+  {id:'S4_GRID',  label:'Grid Coordinates',          domain:'Space',      phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Reading grid maps','Locating positions','Giving directions','Simple coordinates']},
   {id:'S5_VIEWS', label:'Views of Objects',           domain:'Space',      phase:'Inter', grade:5,level:6,  skills:['Top, front, side views','Drawing views','Matching views to objects','Isometric awareness']},
   {id:'S6_ANGLES',label:'Angle Measurement',         domain:'Space',      phase:'Inter', grade:6,level:7,  skills:['Using protractor','Degrees in triangle/circle','Acute, Obtuse, Reflex','Estimating angles']},
   {id:'S6_CLASSIFY',label:'Classifying Triangles',   domain:'Space',      phase:'Inter', grade:6,level:7,  skills:['By angles (acute, right, obtuse)','By sides (equilateral, isosceles, scalene)','Properties of each']},
@@ -334,9 +334,9 @@ const CURRICULUM_NODES=[
   {id:'M3_MASS',  label:'Mass (Kilograms)',            domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['Grams and kilograms','Using a scale','Estimating mass','Comparing masses']},
   {id:'M3_CAPACITY',label:'Capacity (Litres)',        domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['Millilitres and litres','Using measuring jugs','Estimating capacity','Comparing capacities']},
   {id:'M3_TIMEADV',label:'Time (Minutes)',            domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['5-minute intervals','Reading all times','Duration in hours','Elapsed time']},
-  {id:'M4_CONVERT',label:'Unit Conversions',         domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['mm ↔ cm ↔ m','g ↔ kg','ml ↔ l','Conversion calculations']},
-  {id:'M4_PERIM', label:'Perimeter',                  domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['Adding all sides','Perimeter of rectangles','Formula P = 2(l+w)','Finding missing sides']},
-  {id:'M4_TIMEELAP',label:'Elapsed Time',             domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['Calculate durations','Reading timetables','Adding hours/minutes','Timeline problems']},
+  {id:'M4_CONVERT',label:'Unit Conversions',         domain:'Measurement',phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['mm ↔ cm ↔ m','g ↔ kg','ml ↔ l','Conversion calculations']},
+  {id:'M4_PERIM', label:'Perimeter',                  domain:'Measurement',phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Adding all sides','Perimeter of rectangles','Formula P = 2(l+w)','Finding missing sides']},
+  {id:'M4_TIMEELAP',label:'Elapsed Time',             domain:'Measurement',phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Calculate durations','Reading timetables','Adding hours/minutes','Timeline problems']},
   {id:'M5_AREA',  label:'Area (Squares)',              domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['Counting square units','Area = l × w','Relationship to perimeter','Square centimeters/meters']},
   {id:'M5_TIME24',label:'24-Hour Time',               domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['24-hour clock notation','Converting 12h to 24h','Duration calculations','Timetable reading']},
   {id:'M5_TEMP',  label:'Temperature',                domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['Reading thermometers','Degrees Celsius','Comparing temperatures','Negative temperatures']},
@@ -353,8 +353,8 @@ const CURRICULUM_NODES=[
   {id:'D1_COLLECT',label:'Collect & Represent',      domain:'Data',       phase:'Found', grade:1,level:2,  skills:['Asking questions','Recording answers','Object graphs','Comparing groups']},
   {id:'D2_PICTOGRAPH',label:'Pictographs',            domain:'Data',       phase:'Found', grade:2,level:3,  skills:['Drawing pictographs','Reading pictographs','Answering questions from data','One-to-one symbols']},
   {id:'D3_TALLY', label:'Tally Charts',               domain:'Data',       phase:'Found', grade:3,level:4,  skills:['Tally marks (bundling 5s)','Frequency tables','Converting to numbers','Organizing data']},
-  {id:'D4_BARGRAPH',label:'Bar Graphs',               domain:'Data',       phase:'Inter', grade:4,level:5,  skills:['Drawing bar graphs','Reading scales','Interpreting data','Answering questions']},
-  {id:'D4_QUESTIONS',label:'Data Questions',          domain:'Data',       phase:'Inter', grade:4,level:5,  skills:['Formulating questions','Choosing data sources','Identifying bias','Drawing conclusions']},
+  {id:'D4_BARGRAPH',label:'Bar Graphs',               domain:'Data',       phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Drawing bar graphs','Reading scales','Interpreting data','Answering questions']},
+  {id:'D4_QUESTIONS',label:'Data Questions',          domain:'Data',       phase:'Inter', grade:4,level:5, term:Math.floor(Math.random()*4)+1,  skills:['Formulating questions','Choosing data sources','Identifying bias','Drawing conclusions']},
   {id:'D5_MODE',  label:'Mode & Median',              domain:'Data',       phase:'Inter', grade:5,level:6,  skills:['Finding mode','Finding median','Organizing data sets','Comparing datasets']},
   {id:'D6_MEAN',  label:'Mean (Average)',              domain:'Data',       phase:'Inter', grade:6,level:7,  skills:['Calculating mean','Sum ÷ count','Comparing averages','Choosing appropriate average']},
   {id:'D6_PIE',   label:'Pie Charts',                  domain:'Data',       phase:'Inter', grade:6,level:7,  skills:['Reading pie charts','Fractions of whole','Comparing sectors','Percent in pie charts']},
@@ -717,7 +717,7 @@ let state={
   selectedGrade:null,sessionId:null,startTime:null,
   queue:[],currentIdx:0,
   scores:{},           // nodeId → {result,score}
-  currentProbeStage:0, // 0=calc probe, 1=validation probe
+  currentProbeType:'context',passedFirstProbe:false, // 0=calc probe, 1=validation probe
   firstAttemptResult:null,
   traversalLog:[],complete:false,answered:false
 };
@@ -736,7 +736,11 @@ function enqueuePrereqs(nodeId){
 
 function buildInitialQueue(gradeStr){
   const g=gradeStr==='R'?0:parseInt(gradeStr);
-  const start=CURRICULUM_NODES.filter(n=>n.grade===g);
+  let start=CURRICULUM_NODES.filter(n=>{
+    if(n.grade!==g)return false;
+    if(n.grade===4&&n.term>2)return false;
+    return true;
+  });
   start.sort((a,b)=>a.domain.localeCompare(b.domain)||a.level-b.level);
   return start.map(n=>n.id);
 }
@@ -783,7 +787,7 @@ function startAssessment(){
   if(!state.selectedGrade)return;
   clearSession();
   state={selectedGrade:state.selectedGrade,sessionId:Date.now().toString(36),startTime:Date.now(),
-    queue:buildInitialQueue(state.selectedGrade),currentIdx:0,scores:{},currentProbeStage:0,
+    queue:buildInitialQueue(state.selectedGrade),currentIdx:0,scores:{},currentProbeType:'context',passedFirstProbe:false,
     firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
   saveSession();
   showScreen('screen-assess');
@@ -793,14 +797,17 @@ function startAssessment(){
 // ════════════════════════════════════════════════════════════════════
 // RENDER QUESTION  (handles both probe stages)
 // ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// RENDER QUESTION  (handles both probe stages)
+// ════════════════════════════════════════════════════════════════════
 function renderCurrentQuestion(){
   if(state.currentIdx>=state.queue.length){completeAssessment();return}
 
   const nodeId=state.queue[state.currentIdx];
   const node=nodeMap[nodeId];
   const qEntry=qMap[nodeId];
-  const stage=state.currentProbeStage;
-  const probe=qEntry?.probes?.[stage]??null;
+  const probeType=state.currentProbeType;
+  const probe=qEntry?.probes?qEntry.probes.find(p=>p.t===probeType):null;
 
   state.answered=false;
 
@@ -818,14 +825,15 @@ function renderCurrentQuestion(){
 
   // Card validation mode
   const card=document.getElementById('question-card');
-  if(stage===1){card.classList.add('validation-mode')}else{card.classList.remove('validation-mode')}
+  if(probeType==='calc'){card.classList.add('validation-mode')}else{card.classList.remove('validation-mode')}
 
   // Meta
   const phaseColor=PHASE_COLORS[node.phase]||'#58a6ff';
   const gradeNum=node.grade===0?'R':node.grade;
-  const probeBadgeHTML=stage===0
-    ? `<span class="q-probe-badge calc">🔢 Calculation</span>`
-    : `<span class="q-probe-badge validation">🔄 Validation Probe</span>`;
+  const probeBadgeHTML=probeType==='context'
+    ? `<span class="q-probe-badge validation" style="display:inline-flex">🌍 Contextual Probe</span>`
+    : `<span class="q-probe-badge calc" style="display:inline-flex">🔢 Calc Verification</span>`;
+  
   document.getElementById('q-meta').innerHTML=
     `<span class="q-phase-badge" style="background:${phaseColor}">${PHASE_LABELS[node.phase]} · Gr ${gradeNum}</span>`+
     `<span class="q-domain-badge">${node.domain}</span>`+
@@ -852,12 +860,10 @@ function renderCurrentQuestion(){
 
   // Traversal hint
   const preqC=getPrereqs(nodeId).length;
-  if(stage===1){
-    document.getElementById('traversal-text').textContent='Validation probe — correct here will cancel gap traversal';
+  if(probeType==='context'){
+    document.getElementById('traversal-text').textContent='Word problem first — correct here triggers calc verification';
   }else{
-    document.getElementById('traversal-text').textContent=preqC>0
-      ?`A wrong answer will trigger a contextual word problem to confirm the gap`
-      :'Root concept — validation probe applies if wrong';
+    document.getElementById('traversal-text').textContent=state.passedFirstProbe?'Calc verification — to confirm mastery':'Math only — checking for language barrier';
   }
 
   // Animate
@@ -870,69 +876,111 @@ function renderCurrentQuestion(){
 function selectOption(optIdx){
   if(state.answered)return;
   state.answered=true;
+  state.selectedOption=optIdx;
+
   const nodeId=state.queue[state.currentIdx];
-  const probe=qMap[nodeId]?.probes?.[state.currentProbeStage];
-  const isCorrect=probe&&optIdx===probe.a;
+  const qData=qMap[nodeId];
+  let activeQuestionData=qData&&qData.probes?qData.probes.find(p=>p.t===state.currentProbeType):qData;
+  const isCorrect=activeQuestionData&&optIdx===activeQuestionData.a;
 
-  // Highlight buttons
-  document.querySelectorAll('.option-btn').forEach((btn,i)=>{
-    btn.classList.add('disabled');
-    if(probe&&i===probe.a)btn.classList.add('correct');
-    else if(i===optIdx&&!isCorrect)btn.classList.add('wrong');
-  });
-  document.getElementById('btn-dont-know').disabled=true;
+  const banner=document.getElementById('feedback-banner');
 
-  if(state.currentProbeStage===0){
+  if(state.currentProbeType==='context'&&qData.probes){
     if(isCorrect){
-      // Stage 0 correct → confirmed mastery
-      state.scores[nodeId]={result:'correct',score:1.0};
-      showFeedback('correct','✅ Correct!');
-      showNextBtn('Next →',false);
+      state.passedFirstProbe=true;
+      banner.textContent='✅ Good job! Now let\'s verify with a quick calculation...';
+      banner.className='feedback-banner correct show';
+      document.getElementById('btn-next').onclick=function(){
+        state.currentProbeType='calc';
+        renderCurrentQuestion();
+      };
     }else{
-      // Stage 0 wrong → don't record yet, trigger validation probe
-      state.firstAttemptResult='wrong';
-      showFeedback('wrong',`❌ Not quite. Let's try a different approach on the same topic to be sure.`);
-      showNextBtn('Try contextual question →',true);
+      state.passedFirstProbe=false;
+      banner.textContent='❌ Incorrect. Let\'s try testing just the math without the story.';
+      banner.className='feedback-banner skipped show';
+      document.getElementById('btn-next').onclick=function(){
+        state.currentProbeType='calc';
+        renderCurrentQuestion();
+      };
     }
   }else{
-    // Stage 1 (validation probe)
-    if(isCorrect){
-      // Answered calc wrong but context correct → it was a slip!
-      state.scores[nodeId]={result:'slip',score:0.5};
-      showFeedback('slip','🎯 Slip detected — you understood the concept in context! No gap traversal.');
-      showNextBtn('Next →',false);
+    let finalResult='wrong';
+    let score=0.0;
+    let shouldTraverse=true;
+
+    if(state.passedFirstProbe&&isCorrect){
+      finalResult='correct';score=1.0;shouldTraverse=false;
+      banner.textContent='✅ Verified Mastery!';
+      banner.className='feedback-banner correct show';
+    }else if(!state.passedFirstProbe&&isCorrect){
+      finalResult='slip';score=0.5;shouldTraverse=true;
+      banner.textContent='⚠️ Calculation correct, but story problem missed. (Language barrier noted)';
+      banner.className='feedback-banner slip show';
+      state.traversalLog.push({from:nodeId,added:[],reason:'language-barrier'});
     }else{
-      // Both probes wrong → confirmed gap, traverse
-      state.scores[nodeId]={result:'wrong',score:0.0};
-      enqueuePrereqs(nodeId);
-      showFeedback('wrong','❌ Gap confirmed. Pre-requisite nodes added to the queue.');
-      showNextBtn('Next →',false);
+      banner.textContent=`❌ Incorrect. The correct answer was ${activeQuestionData.o[activeQuestionData.a]}.`;
+      banner.className='feedback-banner wrong show';
     }
+
+    state.scores[nodeId]={result:finalResult,score:score};
+    if(shouldTraverse) enqueuePrereqs(nodeId);
     saveSession();
+    
+    document.getElementById('btn-next').onclick=nextQuestion;
   }
+
+  document.querySelectorAll('.option-btn').forEach((btn,i)=>{
+    btn.classList.add('disabled');
+    if(activeQuestionData&&i===activeQuestionData.a)btn.classList.add('correct');
+    else if(i===optIdx&&!isCorrect)btn.classList.add('wrong');
+  });
+
+  document.getElementById('btn-dont-know').disabled=true;
+  document.getElementById('btn-next').classList.remove('validate-style');
+  document.getElementById('btn-next').textContent=(state.currentProbeType==='context'&&qData.probes)
+    ?(state.passedFirstProbe?'Verify Mastery →':'Test Calculation →')
+    :'Next →';
+  document.getElementById('btn-next').classList.add('visible');
 }
 
 function answerDontKnow(){
   if(state.answered)return;
   state.answered=true;
   const nodeId=state.queue[state.currentIdx];
-  const probe=qMap[nodeId]?.probes?.[state.currentProbeStage];
-  if(probe){document.querySelectorAll('.option-btn')[probe.a]?.classList.add('correct')}
+  const qData=qMap[nodeId];
+  const activeQuestionData=qData&&qData.probes?qData.probes.find(p=>p.t===state.currentProbeType):qData;
+  if(activeQuestionData){document.querySelectorAll('.option-btn')[activeQuestionData.a]?.classList.add('correct')}
   document.querySelectorAll('.option-btn').forEach(btn=>btn.classList.add('disabled'));
   document.getElementById('btn-dont-know').disabled=true;
 
-  if(state.currentProbeStage===0){
-    state.firstAttemptResult='skipped';
-    showFeedback('skipped',"✋ No worries. Let's confirm with a real-world question on the same topic.");
-    showNextBtn('Try contextual question →',true);
+  const banner=document.getElementById('feedback-banner');
+
+  if(state.currentProbeType==='context'&&qData.probes){
+    state.passedFirstProbe=false;
+    banner.textContent='✋ Skipped word problem. Let\'s check calculation to see if it\'s a language barrier.';
+    banner.className='feedback-banner skipped show';
+    document.getElementById('btn-next').onclick=function(){
+        state.currentProbeType='calc';
+        renderCurrentQuestion();
+    };
+    document.getElementById('btn-next').textContent='Test Calculation →';
   }else{
-    // Both skipped → confirmed gap
-    state.scores[nodeId]={result:'skipped',score:0.0};
-    enqueuePrereqs(nodeId);
-    showFeedback('skipped',"✋ Gap confirmed. Pre-requisite nodes added to the diagnostic queue.");
-    showNextBtn('Next →',false);
+    if(!state.passedFirstProbe){
+      state.scores[nodeId]={result:'skipped',score:0.0};
+      enqueuePrereqs(nodeId);
+      banner.textContent='✋ Gap confirmed. Pre-requisite nodes added to the diagnostic queue.';
+      banner.className='feedback-banner skipped show';
+    }else{
+      state.scores[nodeId]={result:'wrong',score:0.0};
+      enqueuePrereqs(nodeId);
+      banner.textContent='❌ calculation skipped after passing word problem. Gap confirmed (false positive caught!).';
+      banner.className='feedback-banner wrong show';
+    }
     saveSession();
+    document.getElementById('btn-next').onclick=nextQuestion;
+    document.getElementById('btn-next').textContent='Next →';
   }
+  document.getElementById('btn-next').classList.add('visible');
 }
 
 function showFeedback(type,msg){
@@ -952,25 +1000,14 @@ function showNextBtn(label,isValidate){
 // NEXT BUTTON  — handles both stage transitions
 // ════════════════════════════════════════════════════════════════════
 function nextQuestion(){
-  const nodeId=state.queue[state.currentIdx];
-  const isTransitionToValidation=state.currentProbeStage===0&&state.firstAttemptResult!==null&&!state.scores[nodeId];
-
-  if(isTransitionToValidation){
-    // Move to validation probe for same node
-    state.currentProbeStage=1;
-    saveSession();
-    renderCurrentQuestion();
-  }else{
-    // Advance to next queue item
-    state.currentIdx++;
-    state.currentProbeStage=0;
-    state.firstAttemptResult=null;
-    saveSession();
-    if(state.currentIdx>=state.queue.length){completeAssessment()}
-    else{renderCurrentQuestion()}
-  }
+  state.currentIdx++;
+  state.currentProbeType='context';
+  state.passedFirstProbe=false;
+  state.firstAttemptResult=null;
+  saveSession();
+  if(state.currentIdx>=state.queue.length){completeAssessment()}
+  else{renderCurrentQuestion()}
 }
-
 function confirmExit(){
   saveSession();
   showToast('Session saved — you can resume later.');
@@ -1078,7 +1115,7 @@ function showToast(msg){
 
 function startNew(){
   clearSession();
-  state={selectedGrade:null,queue:[],currentIdx:0,scores:{},currentProbeStage:0,firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
+  state={selectedGrade:null,queue:[],currentIdx:0,scores:{},currentProbeType:'context',passedFirstProbe:false,firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
   showScreen('screen-welcome');
   document.querySelectorAll('.grade-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('btn-start').disabled=true;
