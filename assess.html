@@ -255,7 +255,7 @@
     <div class="gap-map-section" id="gap-map-section"></div>
     <div class="results-actions">
         <button class="btn-primary" onclick="startNew()">Retake Assessment →</button>
-        <a href="index.html" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">Explore Knowledge Web</a>
+        <button class="btn-secondary" onclick="requestTeacherReview()">Teacher Review 🔒</button>
         <button class="btn-secondary" onclick="exportResults()">📥 Export Report</button>
     </div>
 </div>
@@ -1126,13 +1126,13 @@ function exportResults(){
   if(!r){showToast('No results to export.');return}
   const lines=['# Lumen Diagnostic Results',`Grade: ${r.grade}`,`Date: ${new Date(r.completedAt).toLocaleString()}`,
     `Score: ${r.accuracy}%`,`Correct: ${r.correct} | Slips: ${r.slips} | Gaps: ${r.wrong} | Skipped: ${r.skipped}`,
-    '','## Knowledge Gaps (require remediation)',
+    ','## Knowledge Gaps (require remediation)',
     ...Object.entries(r.scores).filter(([,v])=>v.result==='wrong'||v.result==='skipped')
       .map(([id,v])=>`- [${v.result.toUpperCase()}] ${nodeMap[id]?.label||id}`),
-    '','## Slip-Corrected (watch, may need reinforcement)',
-    ...Object.entries(r.scores).filter(([,v])=>v.result==='slip')
+    ','## Slip-Corrected (watch, may need reinforcement)',
+    ...Object.entries(r.scores).filter(([,v])=>v.result==='slip'||v.result==='language_gap')
       .map(([id])=>`- ${nodeMap[id]?.label||id}`),
-    '','## Mastered',
+    ','## Mastered',
     ...Object.entries(r.scores).filter(([,v])=>v.result==='correct')
       .map(([id])=>`- ${nodeMap[id]?.label||id}`)];
   const blob=new Blob([lines.join('\n')],{type:'text/plain'});
@@ -1141,6 +1141,15 @@ function exportResults(){
   a.download=`lumen-diagnostic-gr${r.grade}-${Date.now()}.txt`;
   a.click();
   showToast('Report exported!');
+}
+
+function requestTeacherReview() {
+  const pin = prompt("Enter Teacher PIN to view the Diagnostic Map:");
+  if (pin === "1234") {
+    window.location.href = "index.html";
+  } else if (pin !== null) {
+    showToast("Incorrect PIN.", "error");
+  }
 }
 
 document.addEventListener('DOMContentLoaded',checkResume);
