@@ -1835,106 +1835,158 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════════
-        // DIAGNOSTIC HEATMAP BRIDGE
-        // Reads lumen_diagnostic_results from localStorage and repaints the graph.
+        // DIAGNOSTIC HEATMAP BRIDGE (V2: TEACHER REPORT)
         // ═══════════════════════════════════════════════════════════════════════
+        
         function loadDiagnosticHeatmap() {
             try {
-                const raw = localStorage.getItem('lumen_v2_results');
-                if (!raw) return;
-                const resultsArray = JSON.parse(raw);
+                const resultsRaw = localStorage.getItem('lumen_diagnostic_results') || localStorage.getItem('lumen_v2_results');
+                if (!resultsRaw) return;
+                
+                const resultsArray = JSON.parse(resultsRaw);
                 if (!resultsArray || resultsArray.length === 0) return;
 
-                const latest = resultsArray[0];
-                const scores = latest.scores;
+                const latestResult = resultsArray[0]; 
+                const scores = latestResult.scores;
+                
                 if (!scores || Object.keys(scores).length === 0) return;
 
                 // Show the banner
                 const banner = document.getElementById('diagnostic-banner');
                 banner.style.display = 'flex';
-                const correct  = Object.values(scores).filter(s => s.result === 'correct').length;
-                const slips    = Object.values(scores).filter(s => s.result === 'slip').length;
-                const gaps     = Object.values(scores).filter(s => s.result === 'wrong' || s.result === 'skipped').length;
-                document.getElementById('diag-subtitle').textContent =
-                    `Grade ${latest.grade} · ${latest.accuracy}% accuracy · `+
-                    `${correct} mastered · ${slips} slip(s) · ${gaps} gap(s)`;
+                document.getElementById('diag-subtitle').textContent = 
+                    `Grade ${latestResult.grade} Student • ${latestResult.accuracy}% Accuracy`;
 
-                // Repaint nodes
-                const nodeUpdates = [];
-                nodes.forEach(node => {
-                    const s = scores[node.id];
-                    if (s) {
-                        if (s.result === 'correct') {
-                            // Mastered: bright green
-                            nodeUpdates.push({
+                const updates = [];
+                let gapListHTML = '';
+                let masteredListHTML = '';
+                
+                // Sort nodes by level so the report panel reads chronologically
+                const sortedNodes = atomizedNodes.slice().sort((a, b) => a.level - b.level);
+
+                sortedNodes.forEach(node => {
+                    const scoreData = scores[node.id];
+                    
+                    if (scoreData) {
+                        if (scoreData.result === 'correct' || scoreData.result === 'slip') {
+                            // MASTERED or SLIP: Keep as a dot, but bright green/teal
+                            const isSlip = scoreData.result === 'slip';
+                            updates.push({
                                 id: node.id,
-                                color: { background: '#1a4d2e', border: '#3fb950' },
-                                font:  { color: '#3fb950' },
-                                borderWidth: 2,
-                                shadow: { enabled: true, color: 'rgba(63,185,80,0.4)', size: 12 }
+                                color: { 
+                                    background: isSlip ? '#0d3d38' : '#238636', 
+                                    border: isSlip ? '#2dd4bf' : '#3fb950' 
+                                },
+                                font: { color: isSlip ? '#2dd4bf' : '#ffffff', size: 14 },
+                                shape: 'dot',
+                                borderWidth: 2
                             });
-                        } else if (s.result === 'slip') {
-                            // Slip corrected: teal
-                            nodeUpdates.push({
-                                id: node.id,
-                                color: { background: '#0d3d38', border: '#2dd4bf' },
-                                font:  { color: '#2dd4bf' },
-                                borderWidth: 2,
-                                shadow: { enabled: true, color: 'rgba(45,212,191,0.35)', size: 10 }
-                            });
+                            
+                            const icon = isSlip ? '🎯' : '✅';
+                            const color = isSlip ? '#2dd4bf' : '#7ee787';
+                            const bg = isSlip ? 'rgba(45,212,191,0.1)' : 'rgba(63,185,80,0.1)';
+                            const border = isSlip ? 'rgba(45,212,191,0.3)' : 'rgba(63,185,80,0.3)';
+
+                            masteredListHTML += `
+                                <div class="prereq-chip" style="background: ${bg}; border: 1px solid ${border}; color: ${color}; margin-bottom: 8px; display: block; text-align: left;" onclick="selectNode('${node.id}')">
+                                    ${icon} Gr ${node.level === 1 ? 'R' : node.level - 1} · ${node.label.replace('\n', ' ')}
+                                </div>`;
                         } else {
-                            // Gap or skipped: red with glow
-                            nodeUpdates.push({
+                            // GAP OR SKIPPED: Transform into a highly visible LABEL BOX
+                            updates.push({
                                 id: node.id,
-                                color: { background: '#4d1a1a', border: '#f85149' },
-                                font:  { color: '#f85149' },
-                                borderWidth: 3,
-                                shadow: { enabled: true, color: 'rgba(248,81,73,0.5)', size: 14 }
+                                color: { background: '#da3633', border: '#f85149' },
+                                font: { color: '#ffffff', size: 16, bold: true },
+                                shape: 'box', // This turns the node into a readable label!
+                                borderWidth: 2
                             });
+                            
+                            gapListHTML += `
+                                <div class="prereq-chip" style="background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: #ff7b72; margin-bottom: 8px; display: block; text-align: left;" onclick="selectNode('${node.id}')">
+                                    ❌ Gr ${node.level === 1 ? 'R' : node.level - 1} · ${node.label.replace('\n', ' ')}
+                                </div>`;
                         }
                     } else {
-                        // Untested: dim down so results pop
-                        nodeUpdates.push({
+                        // UNTESTED: Dim out completely to reduce cognitive load
+                        updates.push({
                             id: node.id,
-                            color: { background: '#0d1117', border: '#21262d' },
-                            font:  { color: '#30363d' },
-                            borderWidth: 1,
-                            shadow: { enabled: false }
+                            color: { background: '#11141d', border: '#30363d' },
+                            font: { color: '#484f58', size: 11 },
+                            shape: 'dot',
+                            size: 10,
+                            borderWidth: 1
                         });
                     }
                 });
-                nodes.update(nodeUpdates);
-
-                // Dim edges: highlight only edges between tested nodes
+                
+                nodes.update(updates);
+                
+                // Dim the edges so the text labels stand out
                 const edgeUpdates = [];
                 edges.forEach(e => {
-                    const fromTested = scores[e.from];
-                    const toTested   = scores[e.to];
-                    const isGapEdge  = fromTested && toTested && 
-                                       (fromTested.result === 'wrong' || fromTested.result === 'skipped') &&
-                                       (toTested.result   === 'wrong' || toTested.result   === 'skipped');
-                    edgeUpdates.push({
-                        id: e.id,
-                        color: { color: isGapEdge ? 'rgba(248,81,73,0.45)' : '#161b22' },
-                        width: isGapEdge ? 2.5 : 1
-                    });
+                    edgeUpdates.push({ id: e.id, color: { color: '#21262d' } });
                 });
                 edges.update(edgeUpdates);
 
-                showToast('Diagnostic heatmap loaded', 'success');
-            } catch (err) {
-                console.error('Heatmap error:', err);
+                // ── AUTO-POPULATE THE SIDE PANEL WITH TEACHER REPORT ──
+                document.getElementById('panel-content').innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <span class="pillar-badge" style="background: #1c2128; color: #58a6ff; border: 1px solid #58a6ff;">📊 DIAGNOSTIC REPORT</span>
+                    </div>
+                    <h1 class="node-title">Student Profile</h1>
+                    <p style="color: #8b949e; font-size: 13px; line-height: 1.5; margin-bottom: 24px;">
+                        This report isolates the exact learning breakdown points. <strong>Click any gap below</strong> to view the suggested remediation strategy.
+                    </p>
+                    
+                    <span class="section-label" style="color: #ff7b72; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 12px;">🔴 IDENTIFIED GAPS (Frontier)</span>
+                    <div style="margin-bottom: 24px;">
+                        ${gapListHTML || '<div style="color: #484f58; font-size: 13px; font-style: italic;">No gaps identified.</div>'}
+                    </div>
+
+                    <span class="section-label" style="color: #7ee787; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 12px;">✅ MASTERED FOUNDATION</span>
+                    <div>
+                        ${masteredListHTML || '<div style="color: #484f58; font-size: 13px; font-style: italic;">No mastered nodes confirmed.</div>'}
+                    </div>
+                `;
+
+            } catch (e) {
+                console.error('Error loading diagnostic results:', e);
             }
         }
 
         function clearDiagnosticView() {
             document.getElementById('diagnostic-banner').style.display = 'none';
-            resetNetwork();
+            
+            // Deep reset of the graph back to its original state (restoring shapes and fonts)
+            nodes.forEach(n => {
+                const raw = atomizedNodes.find(x => x.id === n.id);
+                nodes.update({
+                    id: n.id,
+                    hidden: false,
+                    color: { background: raw.color, border: raw.color },
+                    font: { color: '#fff', size: 12, bold: false },
+                    shape: 'dot',
+                    size: 18 + (raw.level * 2),
+                    borderWidth: 1
+                });
+            });
+            edges.forEach(e => {
+                edges.update({
+                    id: e.id,
+                    hidden: false,
+                    color: { color: '#30363d' },
+                    width: 1.5
+                });
+            });
+            
+            // Reset the panel
+            document.getElementById('panel-content').innerHTML = '<div class="panel-placeholder">Select any node in the web to view atomized learning objectives and remediation strategies.</div>';
+            network.fit({ animation: true });
         }
 
-        // Auto-run when the graph is ready
+        // Run the bridge when the page loads
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(loadDiagnosticHeatmap, 600);
+            setTimeout(loadDiagnosticHeatmap, 500); 
         });
     </script>
 </body>
