@@ -933,7 +933,7 @@ function selectOption(optIdx){
   if(state.currentProbeType==='context'&&qData.probes){
     if(isCorrect){
       state.passedFirstProbe=true;
-      banner.textContent='✅ Good job! Now let\'s verify with a quick calculation...';
+      banner.textContent='🌟 Great job! Now let\\\'s verify with a quick calculation...';
       banner.className='feedback-banner correct show';
       document.getElementById('btn-next').onclick=function(){
         state.currentProbeType='calc';
@@ -941,7 +941,7 @@ function selectOption(optIdx){
       };
     }else{
       state.passedFirstProbe=false;
-      banner.textContent='❌ Incorrect. Let\'s try testing just the math without the story.';
+      banner.textContent='🌱 That’s okay! Let\\\'s try looking at just the math without the story.';
       banner.className='feedback-banner skipped show';
       document.getElementById('btn-next').onclick=function(){
         state.currentProbeType='calc';
@@ -955,15 +955,15 @@ function selectOption(optIdx){
 
     if(state.passedFirstProbe&&isCorrect){
       finalResult='correct';score=1.0;shouldTraverse=false;
-      banner.textContent='✅ Verified Mastery!';
+      banner.textContent='🌟 Awesome! You really know this.';
       banner.className='feedback-banner correct show';
     }else if(!state.passedFirstProbe&&isCorrect){
       finalResult='slip';score=0.5;shouldTraverse=true;
-      banner.textContent='⚠️ Calculation correct, but story problem missed. (Language barrier noted)';
+      banner.textContent='💡 You got the math right! The story part was just a bit tricky.';
       banner.className='feedback-banner slip show';
       state.traversalLog.push({from:nodeId,added:[],reason:'language-barrier'});
     }else{
-      banner.textContent=`❌ Incorrect. The correct answer was ${activeQuestionData.o[activeQuestionData.a]}.`;
+      banner.textContent=`🌱 Good try! The exact answer was ${activeQuestionData.o[activeQuestionData.a]}. We'll work on this together later.`;
       banner.className='feedback-banner wrong show';
     }
 
@@ -1004,7 +1004,7 @@ function answerDontKnow(){
 
   if(state.currentProbeType==='context'&&qData.probes){
     state.passedFirstProbe=false;
-    banner.textContent='✋ Skipped word problem. Let\'s check calculation to see if it\'s a language barrier.';
+    banner.textContent='🌱 That’s okay! Let\\\'s try looking at just the math without the story.';
     banner.className='feedback-banner skipped show';
     document.getElementById('btn-next').onclick=function(){
         state.currentProbeType='calc';
@@ -1015,13 +1015,13 @@ function answerDontKnow(){
     if(!state.passedFirstProbe){
       state.scores[nodeId]={result:'skipped',score:0.0,timeTaken:timeTaken};
       enqueuePrereqs(nodeId);
-      banner.textContent='✋ Gap confirmed. Pre-requisite nodes added to the diagnostic queue.';
+      banner.textContent="✋ Thank you for being honest! We'll look at the building blocks for this concept instead.";
       banner.className='feedback-banner skipped show';
     }else{
       state.scores[nodeId]={result:'wrong',score:0.0,timeTaken:timeTaken};
       enqueuePrereqs(nodeId);
-      banner.textContent='❌ calculation skipped after passing word problem. Gap confirmed (false positive caught!).';
-      banner.className='feedback-banner wrong show';
+      banner.textContent="✋ Thank you for being honest! We'll look at the building blocks for this concept instead.";
+      banner.className='feedback-banner skipped show';
     }
     saveSession();
     document.getElementById('btn-next').onclick=nextQuestion;
