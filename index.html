@@ -498,6 +498,38 @@
             color: #484f58;
             font-style: italic;
         }
+
+        /* ── Diagnostic Heatmap Banner ─────────────────────────────────── */
+        #diagnostic-banner {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(17, 20, 29, 0.96);
+            border: 1px solid #58a6ff;
+            border-left: 4px solid #58a6ff;
+            padding: 14px 22px;
+            border-radius: 10px;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            gap: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(88,166,255,0.1);
+            backdrop-filter: blur(8px);
+            min-width: 360px;
+        }
+        .diag-info h3 { margin: 0 0 3px 0; font-size: 14px; font-weight: 700; color: #fff; }
+        .diag-info p  { margin: 0 0 8px 0; font-size: 12px; color: #8b949e; }
+        .diag-legend  { display: flex; gap: 14px; font-size: 11px; flex-wrap: wrap; }
+        .diag-legend span { display: flex; align-items: center; gap: 5px; color: #8b949e; font-weight: 500; }
+        .diag-dot     { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .btn-clear-diag {
+            background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+            padding: 9px 18px; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 700; white-space: nowrap;
+            transition: all 0.2s; font-family: inherit;
+        }
+        .btn-clear-diag:hover { background: #da3633; border-color: #f85149; color: #fff; }
     </style>
 </head>
 
@@ -564,6 +596,20 @@
                 <button class="export-btn png" onclick="exportPNG()">📷 PNG</button>
                 <button class="export-btn pdf" onclick="exportPDF()">📄 PDF</button>
             </div>
+        </div>
+
+        <div id="diagnostic-banner">
+            <div class="diag-info">
+                <h3>🔍 Diagnostic Heatmap Active</h3>
+                <p id="diag-subtitle">Showing latest assessment results.</p>
+                <div class="diag-legend">
+                    <span><div class="diag-dot" style="background:#238636;"></div> Mastered</span>
+                    <span><div class="diag-dot" style="background:#2dd4bf;"></div> Slip (context correct)</span>
+                    <span><div class="diag-dot" style="background:#da3633;"></div> Gap / Skipped</span>
+                    <span><div class="diag-dot" style="background:#30363d;"></div> Untested</span>
+                </div>
+            </div>
+            <button class="btn-clear-diag" onclick="clearDiagnosticView()">✕ Exit View</button>
         </div>
 
         <div id="mynetwork"></div>
@@ -1787,6 +1833,109 @@
             toast.className = 'toast ' + type + ' show';
             setTimeout(() => toast.classList.remove('show'), 2500);
         }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // DIAGNOSTIC HEATMAP BRIDGE
+        // Reads lumen_diagnostic_results from localStorage and repaints the graph.
+        // ═══════════════════════════════════════════════════════════════════════
+        function loadDiagnosticHeatmap() {
+            try {
+                const raw = localStorage.getItem('lumen_v2_results');
+                if (!raw) return;
+                const resultsArray = JSON.parse(raw);
+                if (!resultsArray || resultsArray.length === 0) return;
+
+                const latest = resultsArray[0];
+                const scores = latest.scores;
+                if (!scores || Object.keys(scores).length === 0) return;
+
+                // Show the banner
+                const banner = document.getElementById('diagnostic-banner');
+                banner.style.display = 'flex';
+                const correct  = Object.values(scores).filter(s => s.result === 'correct').length;
+                const slips    = Object.values(scores).filter(s => s.result === 'slip').length;
+                const gaps     = Object.values(scores).filter(s => s.result === 'wrong' || s.result === 'skipped').length;
+                document.getElementById('diag-subtitle').textContent =
+                    `Grade ${latest.grade} · ${latest.accuracy}% accuracy · `+
+                    `${correct} mastered · ${slips} slip(s) · ${gaps} gap(s)`;
+
+                // Repaint nodes
+                const nodeUpdates = [];
+                nodes.forEach(node => {
+                    const s = scores[node.id];
+                    if (s) {
+                        if (s.result === 'correct') {
+                            // Mastered: bright green
+                            nodeUpdates.push({
+                                id: node.id,
+                                color: { background: '#1a4d2e', border: '#3fb950' },
+                                font:  { color: '#3fb950' },
+                                borderWidth: 2,
+                                shadow: { enabled: true, color: 'rgba(63,185,80,0.4)', size: 12 }
+                            });
+                        } else if (s.result === 'slip') {
+                            // Slip corrected: teal
+                            nodeUpdates.push({
+                                id: node.id,
+                                color: { background: '#0d3d38', border: '#2dd4bf' },
+                                font:  { color: '#2dd4bf' },
+                                borderWidth: 2,
+                                shadow: { enabled: true, color: 'rgba(45,212,191,0.35)', size: 10 }
+                            });
+                        } else {
+                            // Gap or skipped: red with glow
+                            nodeUpdates.push({
+                                id: node.id,
+                                color: { background: '#4d1a1a', border: '#f85149' },
+                                font:  { color: '#f85149' },
+                                borderWidth: 3,
+                                shadow: { enabled: true, color: 'rgba(248,81,73,0.5)', size: 14 }
+                            });
+                        }
+                    } else {
+                        // Untested: dim down so results pop
+                        nodeUpdates.push({
+                            id: node.id,
+                            color: { background: '#0d1117', border: '#21262d' },
+                            font:  { color: '#30363d' },
+                            borderWidth: 1,
+                            shadow: { enabled: false }
+                        });
+                    }
+                });
+                nodes.update(nodeUpdates);
+
+                // Dim edges: highlight only edges between tested nodes
+                const edgeUpdates = [];
+                edges.forEach(e => {
+                    const fromTested = scores[e.from];
+                    const toTested   = scores[e.to];
+                    const isGapEdge  = fromTested && toTested && 
+                                       (fromTested.result === 'wrong' || fromTested.result === 'skipped') &&
+                                       (toTested.result   === 'wrong' || toTested.result   === 'skipped');
+                    edgeUpdates.push({
+                        id: e.id,
+                        color: { color: isGapEdge ? 'rgba(248,81,73,0.45)' : '#161b22' },
+                        width: isGapEdge ? 2.5 : 1
+                    });
+                });
+                edges.update(edgeUpdates);
+
+                showToast('Diagnostic heatmap loaded', 'success');
+            } catch (err) {
+                console.error('Heatmap error:', err);
+            }
+        }
+
+        function clearDiagnosticView() {
+            document.getElementById('diagnostic-banner').style.display = 'none';
+            resetNetwork();
+        }
+
+        // Auto-run when the graph is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(loadDiagnosticHeatmap, 600);
+        });
     </script>
 </body>
 
