@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumen Diagnostic Assessment</title>
+    <meta name="description" content="Adaptive CAPS Mathematics diagnostic. Graph-based traversal with a 2-probe resilience engine to avoid false negatives.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base:#080a10; --bg-surface:#0f1117; --bg-card:#161b27; --bg-card-hover:#1c2235;
+            --border:rgba(255,255,255,0.07); --border-lit:rgba(88,166,255,0.4);
+            --text-primary:#e2e8f0; --text-secondary:#8b95a8; --text-muted:#4a5568;
+            --accent:#58a6ff; --accent-glow:rgba(88,166,255,0.15);
+            --green:#3fb950; --green-glow:rgba(63,185,80,0.15);
+            --red:#f85149;   --red-glow:rgba(248,81,73,0.15);
+            --orange:#d29922;--orange-glow:rgba(210,153,34,0.12);
+            --teal:#2dd4bf;  --teal-glow:rgba(45,212,191,0.12);
+            --purple:#a371f7;
+            --grade-r:#bc8cff; --grade-found:#3fb950; --grade-inter:#d29922; --grade-senior:#f78166;
+            --radius:12px; --radius-sm:8px; --tr:all 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+        .ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .ambient::before{content:'';position:absolute;top:-20%;left:-10%;width:60vw;height:60vw;
+            background:radial-gradient(circle,rgba(88,166,255,0.07) 0%,transparent 70%);border-radius:50%;
+            animation:pulse-slow 8s ease-in-out infinite alternate}
+        .ambient::after{content:'';position:absolute;bottom:-20%;right:-10%;width:50vw;height:50vw;
+            background:radial-gradient(circle,rgba(163,113,247,0.06) 0%,transparent 70%);border-radius:50%;
+            animation:pulse-slow 10s ease-in-out infinite alternate-reverse}
+        @keyframes pulse-slow{from{transform:scale(1)}to{transform:scale(1.15) translateY(-2%)}}
+        .screen{position:relative;z-index:1;display:none;flex-direction:column;align-items:center;min-height:100vh;padding:20px}
+        .screen.active{display:flex}
+        .nav{width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;padding:16px 0;margin-bottom:12px}
+        .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .nav-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+        .nav-name{font-size:15px;font-weight:700;color:var(--text-primary)}
+        .nav-name span{color:var(--accent)}
+        .nav-link{font-size:13px;color:var(--text-secondary);text-decoration:none;padding:6px 14px;border:1px solid var(--border);border-radius:20px;transition:var(--tr)}
+        .nav-link:hover{color:var(--accent);border-color:var(--border-lit)}
+        /* WELCOME */
+        .hero{text-align:center;max-width:680px;margin:40px auto 48px}
+        .hero-eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.25);color:var(--accent);font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px}
+        .hero h1{font-size:clamp(2.2rem,5vw,3.4rem);font-weight:800;line-height:1.15;letter-spacing:-1px;background:linear-gradient(135deg,#e2e8f0 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:16px}
+        .hero p{font-size:1.05rem;color:var(--text-secondary);line-height:1.7;max-width:520px;margin:0 auto 36px}
+        .grade-selector-section{width:100%;max-width:680px;margin:0 auto 40px}
+        .grade-selector-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-secondary);text-align:center;margin-bottom:20px}
+        .grade-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+        .grade-btn{position:relative;cursor:pointer;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px;text-align:center;transition:var(--tr);display:flex;flex-direction:column;align-items:center;gap:6px}
+        .grade-btn:hover{background:var(--bg-card-hover);border-color:rgba(255,255,255,0.15);transform:translateY(-2px)}
+        .grade-btn.selected{border-color:var(--accent);background:var(--accent-glow);box-shadow:0 0 20px rgba(88,166,255,0.15);transform:translateY(-2px)}
+        .grade-btn .grade-num{font-size:1.4rem;font-weight:800;line-height:1}
+        .grade-btn .grade-lbl{font-size:10px;color:var(--text-secondary);font-weight:500}
+        .grade-btn.selected .grade-lbl{color:var(--accent)}
+        .grade-btn .grade-dot{width:6px;height:6px;border-radius:50%;margin-top:2px}
+        .info-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:680px;margin:0 auto 40px}
+        .info-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:8px}
+        .info-card-icon{font-size:1.5rem}
+        .info-card-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+        .info-card-desc{font-size:12px;color:var(--text-secondary);line-height:1.5}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#3b7dd8);color:#000;font-size:15px;font-weight:700;padding:16px 48px;border:none;border-radius:40px;cursor:pointer;transition:var(--tr);box-shadow:0 4px 24px rgba(88,166,255,0.3);letter-spacing:.3px}
+        .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(88,166,255,0.45)}
+        .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-card);color:var(--text-secondary);font-size:13px;font-weight:600;padding:11px 28px;border:1px solid var(--border);border-radius:40px;cursor:pointer;transition:var(--tr);font-family:inherit}
+        .btn-secondary:hover{color:var(--text-primary);border-color:rgba(255,255,255,0.2)}
+        .resume-banner{display:none;width:100%;max-width:680px;margin:0 auto 28px;background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:var(--radius);padding:16px 20px;align-items:center;gap:14px}
+        .resume-banner.show{display:flex}
+        .resume-info{flex:1}
+        .resume-title{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:2px}
+        .resume-sub{font-size:12px;color:var(--text-secondary)}
+        .btn-resume{background:var(--accent);color:#000;font-size:12px;font-weight:700;padding:8px 20px;border:none;border-radius:20px;cursor:pointer;font-family:inherit;white-space:nowrap}
+        .btn-discard{background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;font-family:inherit;padding:8px;white-space:nowrap}
+        /* ASSESS */
+        #screen-assess{justify-content:flex-start;padding-top:20px}
+        .assess-header{width:100%;max-width:780px;margin:0 auto 28px}
+        .progress-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+        .progress-label{font-size:12px;color:var(--text-secondary);font-weight:500}
+        .progress-count{font-size:12px;color:var(--text-muted)}
+        .progress-bar-track{height:4px;background:var(--bg-card);border-radius:2px;overflow:hidden}
+        .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:2px;transition:width .5s ease}
+        .question-card{width:100%;max-width:780px;margin:0 auto;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:36px 40px;animation:slide-in .35s cubic-bezier(.4,0,.2,1);transition:border-color .3s}
+        .question-card.validation-mode{border-color:rgba(210,153,34,0.4);background:linear-gradient(135deg,var(--bg-card),rgba(210,153,34,0.04))}
+        @keyframes slide-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+        .q-meta{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+        .q-phase-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:20px;color:#000}
+        .q-domain-badge{font-size:10px;font-weight:600;background:rgba(255,255,255,0.07);color:var(--text-secondary);padding:4px 10px;border-radius:20px}
+        .q-probe-badge{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:4px 12px;border-radius:20px;display:none}
+        .q-probe-badge.calc{background:rgba(88,166,255,0.12);color:var(--accent);border:1px solid rgba(88,166,255,0.25);display:inline-flex;align-items:center;gap:5px}
+        .q-probe-badge.validation{background:rgba(210,153,34,0.15);color:var(--orange);border:1px solid rgba(210,153,34,0.35);display:inline-flex;align-items:center;gap:5px}
+        .q-node-id{font-size:10px;color:var(--text-muted);font-family:monospace;margin-left:auto}
+        .q-text{font-size:1.15rem;font-weight:600;line-height:1.6;color:var(--text-primary);margin-bottom:22px}
+        .skill-context{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px}
+        .skill-chip{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text-muted);font-size:10px;font-weight:500;padding:3px 9px;border-radius:10px}
+        .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+        .option-btn{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;text-align:left;cursor:pointer;transition:var(--tr);display:flex;align-items:flex-start;gap:12px;font-family:inherit}
+        .option-btn:hover:not(.disabled){background:var(--bg-card-hover);border-color:rgba(255,255,255,0.15);transform:translateY(-1px)}
+        .option-btn.correct{background:var(--green-glow);border-color:var(--green);color:var(--green)}
+        .option-btn.wrong{background:var(--red-glow);border-color:var(--red);color:var(--red)}
+        .option-btn.disabled{cursor:default}
+        .option-letter{min-width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-secondary);flex-shrink:0}
+        .option-btn.correct .option-letter{background:var(--green);color:#000;border-color:var(--green)}
+        .option-btn.wrong .option-letter{background:var(--red);color:#fff;border-color:var(--red)}
+        .option-text{font-size:14px;color:var(--text-primary);line-height:1.45}
+        .action-row{display:flex;align-items:center;justify-content:space-between;padding-top:20px;border-top:1px solid var(--border)}
+        .btn-dont-know{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red);font-size:13px;font-weight:600;padding:10px 22px;border-radius:40px;cursor:pointer;transition:var(--tr);font-family:inherit}
+        .btn-dont-know:hover:not(:disabled){background:rgba(248,81,73,0.2)}
+        .btn-dont-know:disabled{opacity:.4;cursor:not-allowed}
+        .btn-next{background:linear-gradient(135deg,var(--accent),#3b7dd8);color:#000;font-size:14px;font-weight:700;padding:12px 32px;border:none;border-radius:40px;cursor:pointer;font-family:inherit;opacity:0;pointer-events:none;transition:opacity .3s,transform .2s,background .3s}
+        .btn-next.visible{opacity:1;pointer-events:all}
+        .btn-next:hover{transform:translateY(-1px)}
+        .btn-next.validate-style{background:linear-gradient(135deg,var(--orange),#b07a10)}
+        .feedback-banner{display:none;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;margin-top:-8px;margin-bottom:16px}
+        .feedback-banner.show{display:flex}
+        .feedback-banner.correct{background:var(--green-glow);border:1px solid rgba(63,185,80,.3);color:var(--green)}
+        .feedback-banner.wrong{background:var(--red-glow);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+        .feedback-banner.skipped{background:var(--orange-glow);border:1px solid rgba(210,153,34,.3);color:var(--orange)}
+        .feedback-banner.slip{background:var(--teal-glow);border:1px solid rgba(45,212,191,.3);color:var(--teal)}
+        .traversal-hint{font-size:11px;color:var(--text-muted);text-align:center;padding-top:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+        .traversal-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted)}
+        /* RESULTS */
+        #screen-results{justify-content:flex-start}
+        .results-header{text-align:center;max-width:700px;margin:40px auto 36px}
+        .results-header h2{font-size:2.2rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#e2e8f0,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .results-header p{color:var(--text-secondary);font-size:14px;line-height:1.6}
+        .score-overview{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;width:100%;max-width:920px;margin:0 auto 28px}
+        .score-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 14px;text-align:center}
+        .score-card.hl{border-color:var(--accent);background:var(--accent-glow)}
+        .score-value{font-size:2rem;font-weight:800;line-height:1;margin-bottom:4px}
+        .score-card-label{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+        .sv-blue{color:var(--accent)} .sv-green{color:var(--green)} .sv-red{color:var(--red)} .sv-orange{color:var(--orange)} .sv-teal{color:var(--teal)}
+        .results-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:100%;max-width:920px;margin:0 auto 24px}
+        .results-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+        .results-section h3{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .results-section h3::after{content:'';flex:1;height:1px;background:var(--border)}
+        .node-result-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+        .node-result-item:last-child{border-bottom:none}
+        .nri-icon{font-size:13px;flex-shrink:0}
+        .nri-label{font-size:13px;color:var(--text-primary);flex:1}
+        .nri-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+        .nri-badge.correct{background:var(--green-glow);color:var(--green)}
+        .nri-badge.slip{background:var(--teal-glow);color:var(--teal)}
+        .nri-badge.wrong{background:var(--red-glow);color:var(--red)}
+        .nri-badge.skipped{background:var(--orange-glow);color:var(--orange)}
+        .gap-map-section{width:100%;max-width:920px;margin:0 auto 28px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+        .gap-map-section h3{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:16px}
+        .gap-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:7px}
+        .gap-chip{padding:7px 10px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;line-height:1.3;border:1px solid transparent}
+        .gap-chip.mastered{background:var(--green-glow);border-color:rgba(63,185,80,.25);color:var(--green)}
+        .gap-chip.slip{background:var(--teal-glow);border-color:rgba(45,212,191,.25);color:var(--teal)}
+        .gap-chip.gap{background:var(--red-glow);border-color:rgba(248,81,73,.25);color:var(--red)}
+        .gap-chip.skipped{background:var(--orange-glow);border-color:rgba(210,153,34,.25);color:var(--orange)}
+        .gap-chip.untested{background:rgba(255,255,255,.04);border-color:var(--border);color:var(--text-muted)}
+        .results-actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;width:100%;max-width:920px;margin:0 auto 48px}
+        @media(max-width:640px){
+            .grade-grid{grid-template-columns:repeat(5,1fr);gap:6px}
+            .info-cards{grid-template-columns:1fr}
+            .options-grid{grid-template-columns:1fr}
+            .score-overview{grid-template-columns:repeat(3,1fr)}
+            .results-grid{grid-template-columns:1fr}
+            .question-card{padding:24px 20px}
+            .hero h1{font-size:1.9rem}
+        }
+    </style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<!-- ══════════════════ WELCOME ══════════════════ -->
+<div class="screen active" id="screen-welcome">
+    <nav class="nav">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo">📊</div>
+            <span class="nav-name">Lumen <span>Tracer</span></span>
+        </a>
+        <a href="index.html" class="nav-link">← Knowledge Web</a>
+    </nav>
+    <div class="hero">
+        <div class="hero-eyebrow">⚡ Adaptive Diagnostic Engine v2</div>
+        <h1>Find Exactly Where<br>Learning Broke Down</h1>
+        <p>Two-probe resilience prevents single calculation "slips" from triggering false gaps. Contextual word problems set in real South African scenarios test true conceptual understanding.</p>
+    </div>
+    <div class="resume-banner" id="resume-banner">
+        <div class="resume-info">
+            <div class="resume-title">📝 Session in Progress</div>
+            <div class="resume-sub" id="resume-sub-text">You have an incomplete session.</div>
+        </div>
+        <button class="btn-resume" onclick="resumeSession()">Resume</button>
+        <button class="btn-discard" onclick="discardSession()">Discard</button>
+    </div>
+    <div class="grade-selector-section">
+        <div class="grade-selector-label">Select the student's current grade level</div>
+        <div class="grade-grid" id="grade-grid">
+            <button class="grade-btn" onclick="selectGrade(this,'R')"><span class="grade-num" style="color:var(--grade-r)">R</span><span class="grade-lbl">Reception</span><span class="grade-dot" style="background:var(--grade-r)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'1')"><span class="grade-num" style="color:var(--grade-found)">1</span><span class="grade-lbl">Foundation</span><span class="grade-dot" style="background:var(--grade-found)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'2')"><span class="grade-num" style="color:var(--grade-found)">2</span><span class="grade-lbl">Foundation</span><span class="grade-dot" style="background:var(--grade-found)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'3')"><span class="grade-num" style="color:var(--grade-found)">3</span><span class="grade-lbl">Foundation</span><span class="grade-dot" style="background:var(--grade-found)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'4')"><span class="grade-num" style="color:var(--grade-inter)">4</span><span class="grade-lbl">Intermediate</span><span class="grade-dot" style="background:var(--grade-inter)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'5')"><span class="grade-num" style="color:var(--grade-inter)">5</span><span class="grade-lbl">Intermediate</span><span class="grade-dot" style="background:var(--grade-inter)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'6')"><span class="grade-num" style="color:var(--grade-inter)">6</span><span class="grade-lbl">Intermediate</span><span class="grade-dot" style="background:var(--grade-inter)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'7')"><span class="grade-num" style="color:var(--grade-senior)">7</span><span class="grade-lbl">Senior</span><span class="grade-dot" style="background:var(--grade-senior)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'8')"><span class="grade-num" style="color:var(--grade-senior)">8</span><span class="grade-lbl">Senior</span><span class="grade-dot" style="background:var(--grade-senior)"></span></button>
+            <button class="grade-btn" onclick="selectGrade(this,'9')"><span class="grade-num" style="color:var(--grade-senior)">9</span><span class="grade-lbl">Senior</span><span class="grade-dot" style="background:var(--grade-senior)"></span></button>
+        </div>
+    </div>
+    <div class="info-cards">
+        <div class="info-card"><div class="info-card-icon">🛡️</div><div class="info-card-title">2-Probe Resilience</div><div class="info-card-desc">A wrong answer triggers a second contextual probe. Only two consecutive failures confirm a real gap — preventing slip-based false negatives.</div></div>
+        <div class="info-card"><div class="info-card-icon">🇿🇦</div><div class="info-card-title">Contextual Word Problems</div><div class="info-card-desc">Every validation probe is a real-world South African scenario: taxis, spaza shops, rugby scores, or irrigation grids.</div></div>
+        <div class="info-card"><div class="info-card-icon">💾</div><div class="info-card-title">Offline-First</div><div class="info-card-desc">Sessions auto-save locally. No account needed. Your data never leaves the device.</div></div>
+    </div>
+    <button class="btn-primary" id="btn-start" onclick="startAssessment()" disabled>Begin Diagnostic →</button>
+</div>
+
+<!-- ══════════════════ ASSESSMENT ══════════════════ -->
+<div class="screen" id="screen-assess">
+    <nav class="nav">
+        <a href="#" class="nav-brand" onclick="confirmExit();return false;">
+            <div class="nav-logo">📊</div>
+            <span class="nav-name">Lumen <span>Diagnostic</span></span>
+        </a>
+        <button class="btn-secondary" onclick="confirmExit()">Save & Exit</button>
+    </nav>
+    <div class="assess-header">
+        <div class="progress-meta">
+            <span class="progress-label" id="progress-label">Question 1</span>
+            <span class="progress-count" id="progress-count">0% complete</span>
+        </div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+    </div>
+    <div class="question-card" id="question-card">
+        <div class="q-meta" id="q-meta"></div>
+        <div class="feedback-banner" id="feedback-banner"></div>
+        <div class="q-text" id="q-text"></div>
+        <div class="skill-context" id="skill-context"></div>
+        <div class="options-grid" id="options-grid"></div>
+        <div class="action-row">
+            <button class="btn-dont-know" id="btn-dont-know" onclick="answerDontKnow()">✋ I Don't Know</button>
+            <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+        </div>
+        <div class="traversal-hint"><span class="traversal-dot"></span><span id="traversal-text">Adaptive algorithm active</span></div>
+    </div>
+</div>
+
+<!-- ══════════════════ RESULTS ══════════════════ -->
+<div class="screen" id="screen-results">
+    <nav class="nav">
+        <a href="index.html" class="nav-brand"><div class="nav-logo">📊</div><span class="nav-name">Lumen <span>Tracer</span></span></a>
+        <a href="index.html" class="nav-link">View Knowledge Web →</a>
+    </nav>
+    <div class="results-header"><h2 id="results-title">Diagnostic Complete</h2><p id="results-subtitle"></p></div>
+    <div class="score-overview" id="score-overview"></div>
+    <div class="results-grid" id="results-grid"></div>
+    <div class="gap-map-section" id="gap-map-section"></div>
+    <div class="results-actions">
+        <button class="btn-primary" onclick="startNew()">Retake Assessment →</button>
+        <a href="index.html" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">Explore Knowledge Web</a>
+        <button class="btn-secondary" onclick="exportResults()">📥 Export Report</button>
+    </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// CURRICULUM NODES  (95 nodes, Grade R → 9, all 5 domains)
+// ════════════════════════════════════════════════════════════════════
+const CURRICULUM_NODES=[
+  // NUMBERS
+  {id:'NR_1TO1',  label:'1-to-1 Counting',         domain:'Numbers',    phase:'R',     grade:0,level:1,  skills:['Cardinality principle','Touch-count objects','Stable order counting','Last number = total']},
+  {id:'NR_RECOG', label:'Number Recognition (1-10)',domain:'Numbers',    phase:'R',     grade:0,level:1,  skills:['Recognize numerals 1-10','Match numeral to quantity','Trace and write numerals']},
+  {id:'NR_COMPARE',label:'Compare Quantities',      domain:'Numbers',    phase:'R',     grade:0,level:1,  skills:['More than / Less than','Same as / Equal','Order by quantity']},
+  {id:'N1_BONDS10',label:'Number Bonds to 10',      domain:'Numbers',    phase:'Found', grade:1,level:2,  skills:['Part-part-whole relationships','Complements to 10','Mental addition strategies','Fact families']},
+  {id:'N1_ADDSUBT',label:'Addition & Subtraction',  domain:'Numbers',    phase:'Found', grade:1,level:2,  skills:['Counting on/back','Using number line','Story problems','Recording number sentences']},
+  {id:'N2_BONDS20',label:'Number Bonds to 20',      domain:'Numbers',    phase:'Found', grade:2,level:3,  skills:['Bridging through 10','Near doubles strategy','Mental subtraction','Quick recall']},
+  {id:'N2_PLACE', label:'Place Value (Tens & Units)',domain:'Numbers',    phase:'Found', grade:2,level:3,  skills:['Bundling into tens','Expanded notation','Representing 2-digit numbers','Value vs digit']},
+  {id:'N3_TIMES', label:'Multiplication Tables',    domain:'Numbers',    phase:'Found', grade:3,level:4,  skills:['Skip counting patterns','2x, 5x, 10x, 3x, 4x tables','Array representations','Commutativity']},
+  {id:'N3_SHARING',label:'Division as Sharing',     domain:'Numbers',    phase:'Found', grade:3,level:4,  skills:['Equal sharing','Grouping','Remainders concept','Inverse of multiplication']},
+  {id:'N4_DIV',   label:'Long Division',             domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Estimation quotients','Subtraction regrouping','Recording algorithm','Checking with multiplication']},
+  {id:'N4_FRAC',  label:'Fractions',                 domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Equal parts of whole','Numerator/Denominator meaning','Equivalent fractions','Comparing fractions']},
+  {id:'N4_FACTOR',label:'Factors & Multiples',       domain:'Numbers',    phase:'Inter', grade:4,level:5,  skills:['Factor pairs','Prime numbers','Common factors','LCM basics']},
+  {id:'N5_DECIMAL',label:'Decimals',                 domain:'Numbers',    phase:'Inter', grade:5,level:6,  skills:['Tenths and hundredths','Decimal place value','Fraction-decimal conversion','Ordering decimals']},
+  {id:'N5_FRACOP',label:'Fraction Operations',       domain:'Numbers',    phase:'Inter', grade:5,level:6,  skills:['Add/subtract like denominators','Unlike denominators intro','Mixed numbers','Fraction of quantity']},
+  {id:'N6_PERCENT',label:'Percentages',              domain:'Numbers',    phase:'Inter', grade:6,level:7,  skills:['Percent = per 100','Fraction-decimal-percent conversion','Finding % of amount','Discount/increase']},
+  {id:'N6_RATIO', label:'Ratio & Rate',              domain:'Numbers',    phase:'Inter', grade:6,level:7,  skills:['Part-to-part comparison','Equivalent ratios','Unit rate','Proportion problems']},
+  {id:'N7_INTEGER',label:'Integers',                 domain:'Numbers',    phase:'Senior',grade:7,level:8,  skills:['Number line with negatives','Adding integers','Subtracting integers','Multiplying/dividing integers']},
+  {id:'N7_COMMON',label:'Common Fractions Advanced', domain:'Numbers',    phase:'Senior',grade:7,level:8,  skills:['All four operations','Converting to decimals','Ordering rational numbers','Problem solving']},
+  {id:'N8_EXPONENT',label:'Exponents',               domain:'Numbers',    phase:'Senior',grade:8,level:9,  skills:['Base and index','Laws of exponents','Negative exponents','Scientific notation']},
+  {id:'N8_RATIONAL',label:'Rational Numbers',        domain:'Numbers',    phase:'Senior',grade:8,level:9,  skills:['Representing on number line','Operations with rationals','Terminating vs recurring decimals']},
+  {id:'N9_FACTOR',label:'Factoring Trinomials',      domain:'Numbers',    phase:'Senior',grade:9,level:10, skills:['Finding factors of c','Sum to coefficient b','FOIL reversal','Difference of squares']},
+  // PATTERNS
+  {id:'PR_COPY',  label:'Copy & Extend Patterns',    domain:'Patterns',   phase:'R',     grade:0,level:1,  skills:['Identify repeating unit','Copy AB/ABB patterns','Extend simple sequences','Create own patterns']},
+  {id:'P1_CREATE',label:'Create Own Patterns',       domain:'Patterns',   phase:'Found', grade:1,level:2,  skills:['ABB, AAB, ABC patterns','Describe the rule verbally','Identify pattern errors','Physical patterns']},
+  {id:'P2_NUMBER',label:'Number Patterns',           domain:'Patterns',   phase:'Found', grade:2,level:3,  skills:['Skip counting sequences','+2, +5, +10 patterns','Finding missing terms','Describing rules']},
+  {id:'P3_GEOMETRIC',label:'Geometric Patterns',     domain:'Patterns',   phase:'Found', grade:3,level:4,  skills:['Growing patterns','Shrinking patterns','Pattern tables','Predicting next terms']},
+  {id:'P4_INOUT', label:'Input-Output Tables',       domain:'Patterns',   phase:'Inter', grade:4,level:5,  skills:['Function machines concept','Finding the rule','Completing tables','Multiple operations']},
+  {id:'P5_VARIABLE',label:'Variables & Expressions', domain:'Patterns',   phase:'Inter', grade:5,level:6,  skills:['Letter symbols for unknowns','Substitution','Writing expressions','Evaluating expressions']},
+  {id:'P6_EQUATION',label:'Simple Equations',        domain:'Patterns',   phase:'Inter', grade:6,level:7,  skills:['Balancing equations','Solving one-step equations','Checking solutions','Word problem to equation']},
+  {id:'P7_LINEAR',label:'Linear Relationships',      domain:'Patterns',   phase:'Senior',grade:7,level:8,  skills:['Graphing on Cartesian plane','Table-to-graph conversion','y = mx + c concept','Interpreting gradient']},
+  {id:'P7_FUNCTION',label:'Functions & Relationships',domain:'Patterns',  phase:'Senior',grade:7,level:8,  skills:['Input-output with formulas','Equivalent representations','Flow diagrams','Number sentences']},
+  {id:'P8_SOLVE', label:'Solving Equations',         domain:'Patterns',   phase:'Senior',grade:8,level:9,  skills:['Multi-step equations','Equations with brackets','Equations with fractions','Laws of exponents in equations']},
+  {id:'P8_EXPRESS',label:'Algebraic Expressions',    domain:'Patterns',   phase:'Senior',grade:8,level:9,  skills:['Expand brackets','Simplify like terms','Multiply polynomials','Divide by monomials']},
+  {id:'P9_SIMULT',label:'Simultaneous Equations',    domain:'Patterns',   phase:'Senior',grade:9,level:10, skills:['Substitution method','Elimination method','Graphical solution','Word problem applications']},
+  {id:'P9_FACTORISE',label:'Factorising Expressions',domain:'Patterns',   phase:'Senior',grade:9,level:10, skills:['Common factor','Difference of squares','Trinomial factorisation','Grouping']},
+  {id:'P9_GRAPHS',label:'Linear Graphs',             domain:'Patterns',   phase:'Senior',grade:9,level:10, skills:['x and y intercepts','Gradient from equation','Equations from graphs','Parallel/perpendicular lines']},
+  // SPACE & SHAPE
+  {id:'SR_DIR',   label:'Following Directions',      domain:'Space',      phase:'R',     grade:0,level:1,  skills:['Movement instructions','Identifying shapes in environment','Tracing paths','Basic orientation']},
+  {id:'SR_VIEW',  label:'Viewing Objects',            domain:'Space',      phase:'R',     grade:0,level:1,  skills:['Front, side, top view','Match 3D to 2D outline','Puzzle completion','Building with blocks']},
+  {id:'SR_SHAPE', label:'Recognise 3D Objects',      domain:'Space',      phase:'R',     grade:0,level:1,  skills:['Ball, box, cone shapes','Describe attributes','Sort by shape','Find in environment']},
+  {id:'S1_POSITION',label:'Position & Direction',    domain:'Space',      phase:'Found', grade:1,level:2,  skills:['Left, right, behind, in-front','Multi-step paths','Mapping classroom','Relative position']},
+  {id:'S1_2DSHAPE',label:'2D Shape Recognition',     domain:'Space',      phase:'Found', grade:1,level:2,  skills:['Circle, triangle, square, rectangle','Sides and corners','Sort by attributes','Find in environment']},
+  {id:'S2_PROPERTY',label:'2D Shape Properties',     domain:'Space',      phase:'Found', grade:2,level:3,  skills:['Count sides and vertices','Describe shapes','Compare shapes','Right angles awareness']},
+  {id:'S3_3DPROP',label:'2D vs 3D Properties',       domain:'Space',      phase:'Found', grade:3,level:4,  skills:['Faces, edges, vertices','Prisms vs pyramids','Polygon identification','Nets of 3D shapes']},
+  {id:'S4_SYMM',  label:'Symmetry',                  domain:'Space',      phase:'Inter', grade:4,level:5,  skills:['Lines of symmetry','Reflectional symmetry','Creating symmetric patterns','Symmetry in nature']},
+  {id:'S4_GRID',  label:'Grid Coordinates',          domain:'Space',      phase:'Inter', grade:4,level:5,  skills:['Reading grid maps','Locating positions','Giving directions','Simple coordinates']},
+  {id:'S5_VIEWS', label:'Views of Objects',           domain:'Space',      phase:'Inter', grade:5,level:6,  skills:['Top, front, side views','Drawing views','Matching views to objects','Isometric awareness']},
+  {id:'S6_ANGLES',label:'Angle Measurement',         domain:'Space',      phase:'Inter', grade:6,level:7,  skills:['Using protractor','Degrees in triangle/circle','Acute, Obtuse, Reflex','Estimating angles']},
+  {id:'S6_CLASSIFY',label:'Classifying Triangles',   domain:'Space',      phase:'Inter', grade:6,level:7,  skills:['By angles (acute, right, obtuse)','By sides (equilateral, isosceles, scalene)','Properties of each']},
+  {id:'S7_COORD', label:'Coordinate System',         domain:'Space',      phase:'Senior',grade:7,level:8,  skills:['Plotting (x,y) points','All four quadrants','Grid map reading','Ordered pairs']},
+  {id:'S7_TRANS', label:'Transformation Basics',     domain:'Space',      phase:'Senior',grade:7,level:8,  skills:['Reflection basics','Translation basics','Rotation basics','Describing movements']},
+  {id:'S8_CONSTR',label:'Geometric Constructions',   domain:'Space',      phase:'Senior',grade:8,level:9,  skills:['Bisecting angles','Perpendicular lines','Constructing triangles','Using compass']},
+  {id:'S8_PYTHAG',label:'Theorem of Pythagoras',     domain:'Space',      phase:'Senior',grade:8,level:9,  skills:['a² + b² = c² relationship','Finding hypotenuse','Finding shorter side','Identifying right triangles']},
+  {id:'S8_LINES', label:'Geometry of Straight Lines',domain:'Space',      phase:'Senior',grade:8,level:9,  skills:['Parallel lines cut by transversal','Corresponding angles','Alternate angles','Co-interior angles']},
+  {id:'S9_TRANS', label:'Transformational Geometry', domain:'Space',      phase:'Senior',grade:9,level:10, skills:['Reflection across axes','Rotation around origin','Translation vectors','Enlargement/reduction factors']},
+  {id:'S9_PROOF', label:'Geometric Proofs',          domain:'Space',      phase:'Senior',grade:9,level:10, skills:['Similarity vs Congruency','Proving triangle congruence','Angle relationships','Logical reasoning']},
+  {id:'S9_SIMILAR',label:'Similar & Congruent',      domain:'Space',      phase:'Senior',grade:9,level:10, skills:['Conditions for congruence','Conditions for similarity','Using properties in problems','Scale factor']},
+  // MEASUREMENT
+  {id:'MR_COMPARE',label:'Compare Size',             domain:'Measurement',phase:'R',     grade:0,level:1,  skills:['Long/Short','Heavy/Light','Full/Empty','Big/Small']},
+  {id:'MR_TIME',  label:'Time Awareness',             domain:'Measurement',phase:'R',     grade:0,level:1,  skills:['Morning/Afternoon/Night','Before/After','Days of week','Daily routines']},
+  {id:'M1_NONSTAND',label:'Non-Standard Units',      domain:'Measurement',phase:'Found', grade:1,level:2,  skills:['Measure with hands, steps, cubes','Need for standard units','Estimate lengths','Compare measurements']},
+  {id:'M1_CLOCK', label:'Time Concepts',              domain:'Measurement',phase:'Found', grade:1,level:2,  skills:['Hours in a day','Days in a week','Months and seasons','Yesterday/Today/Tomorrow']},
+  {id:'M2_LENGTH',label:'Standard Length Units',     domain:'Measurement',phase:'Found', grade:2,level:3,  skills:['Centimeters','Meters','Using a ruler','Estimating before measuring']},
+  {id:'M2_TIME',  label:'Telling Time',               domain:'Measurement',phase:'Found', grade:2,level:3,  skills:['Hour hand reading',"O'clock and half past",'Quarter past/to','Analog clock reading']},
+  {id:'M2_MONEY', label:'Money',                      domain:'Measurement',phase:'Found', grade:2,level:3,  skills:['Recognise coins and notes','Value of money','Simple totals','Giving change']},
+  {id:'M3_MASS',  label:'Mass (Kilograms)',            domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['Grams and kilograms','Using a scale','Estimating mass','Comparing masses']},
+  {id:'M3_CAPACITY',label:'Capacity (Litres)',        domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['Millilitres and litres','Using measuring jugs','Estimating capacity','Comparing capacities']},
+  {id:'M3_TIMEADV',label:'Time (Minutes)',            domain:'Measurement',phase:'Found', grade:3,level:4,  skills:['5-minute intervals','Reading all times','Duration in hours','Elapsed time']},
+  {id:'M4_CONVERT',label:'Unit Conversions',         domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['mm ↔ cm ↔ m','g ↔ kg','ml ↔ l','Conversion calculations']},
+  {id:'M4_PERIM', label:'Perimeter',                  domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['Adding all sides','Perimeter of rectangles','Formula P = 2(l+w)','Finding missing sides']},
+  {id:'M4_TIMEELAP',label:'Elapsed Time',             domain:'Measurement',phase:'Inter', grade:4,level:5,  skills:['Calculate durations','Reading timetables','Adding hours/minutes','Timeline problems']},
+  {id:'M5_AREA',  label:'Area (Squares)',              domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['Counting square units','Area = l × w','Relationship to perimeter','Square centimeters/meters']},
+  {id:'M5_TIME24',label:'24-Hour Time',               domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['24-hour clock notation','Converting 12h to 24h','Duration calculations','Timetable reading']},
+  {id:'M5_TEMP',  label:'Temperature',                domain:'Measurement',phase:'Inter', grade:5,level:6,  skills:['Reading thermometers','Degrees Celsius','Comparing temperatures','Negative temperatures']},
+  {id:'M6_AREATRI',label:'Area of Triangles',        domain:'Measurement',phase:'Inter', grade:6,level:7,  skills:['Base and height identification','A = ½bh formula','Composite shapes','Area problem solving']},
+  {id:'M6_CONVERT',label:'Advanced Conversions',     domain:'Measurement',phase:'Inter', grade:6,level:7,  skills:['Converting between all units','Area unit conversions','Multi-step conversions']},
+  {id:'M7_CIRCUM',label:'Circumference & Pi',        domain:'Measurement',phase:'Senior',grade:7,level:8,  skills:['Pi as a ratio','C = πd formula','C = 2πr formula','Diameter vs radius']},
+  {id:'M7_AREACIRCLE',label:'Area of Circles',       domain:'Measurement',phase:'Senior',grade:7,level:8,  skills:['A = πr² formula','Using radius','Finding radius from area','Composite shapes with circles']},
+  {id:'M8_VOLUME',label:'Volume of Prisms',          domain:'Measurement',phase:'Senior',grade:8,level:9,  skills:['V = l × w × h','V = Area of base × height','Cubic units','Capacity-volume relationship']},
+  {id:'M8_SURFACE',label:'Surface Area Basics',      domain:'Measurement',phase:'Senior',grade:8,level:9,  skills:['Nets of prisms','Calculating surface area','Adding face areas','Real-world applications']},
+  {id:'M9_VOLCY', label:'Volume of Cylinders',       domain:'Measurement',phase:'Senior',grade:9,level:10, skills:['V = πr²h formula','Finding radius/height','Cylinder problems','Capacity calculations']},
+  {id:'M9_SURFADV',label:'Surface Area Advanced',    domain:'Measurement',phase:'Senior',grade:9,level:10, skills:['Surface area of cylinders','Composite 3D shapes','Problem solving','Optimization problems']},
+  // DATA HANDLING
+  {id:'DR_SORT',  label:'Sort & Classify',            domain:'Data',       phase:'R',     grade:0,level:1,  skills:['Sorting by attribute','Describing categories','Counting in groups','Same and different']},
+  {id:'D1_COLLECT',label:'Collect & Represent',      domain:'Data',       phase:'Found', grade:1,level:2,  skills:['Asking questions','Recording answers','Object graphs','Comparing groups']},
+  {id:'D2_PICTOGRAPH',label:'Pictographs',            domain:'Data',       phase:'Found', grade:2,level:3,  skills:['Drawing pictographs','Reading pictographs','Answering questions from data','One-to-one symbols']},
+  {id:'D3_TALLY', label:'Tally Charts',               domain:'Data',       phase:'Found', grade:3,level:4,  skills:['Tally marks (bundling 5s)','Frequency tables','Converting to numbers','Organizing data']},
+  {id:'D4_BARGRAPH',label:'Bar Graphs',               domain:'Data',       phase:'Inter', grade:4,level:5,  skills:['Drawing bar graphs','Reading scales','Interpreting data','Answering questions']},
+  {id:'D4_QUESTIONS',label:'Data Questions',          domain:'Data',       phase:'Inter', grade:4,level:5,  skills:['Formulating questions','Choosing data sources','Identifying bias','Drawing conclusions']},
+  {id:'D5_MODE',  label:'Mode & Median',              domain:'Data',       phase:'Inter', grade:5,level:6,  skills:['Finding mode','Finding median','Organizing data sets','Comparing datasets']},
+  {id:'D6_MEAN',  label:'Mean (Average)',              domain:'Data',       phase:'Inter', grade:6,level:7,  skills:['Calculating mean','Sum ÷ count','Comparing averages','Choosing appropriate average']},
+  {id:'D6_PIE',   label:'Pie Charts',                  domain:'Data',       phase:'Inter', grade:6,level:7,  skills:['Reading pie charts','Fractions of whole','Comparing sectors','Percent in pie charts']},
+  {id:'D7_PROB',  label:'Basic Probability',           domain:'Data',       phase:'Senior',grade:7,level:8,  skills:['Certain, likely, unlikely, impossible','Experimental probability','Probability as fraction','Predicting outcomes']},
+  {id:'D7_SUMMARY',label:'Summarising Data',          domain:'Data',       phase:'Senior',grade:7,level:8,  skills:['All three averages','Range','Choosing representations','Data interpretation']},
+  {id:'D8_RANGE', label:'Range & Outliers',            domain:'Data',       phase:'Senior',grade:8,level:9,  skills:['Calculating range','Identifying outliers','Effect on mean/median','Data spread']},
+  {id:'D8_PROBADV',label:'Probability Advanced',      domain:'Data',       phase:'Senior',grade:8,level:9,  skills:['Relative frequency','Probability scale 0-1','Experimental vs theoretical','Tree diagrams intro']},
+  {id:'D9_HISTO', label:'Histograms',                   domain:'Data',       phase:'Senior',grade:9,level:10, skills:['Grouped data','Class intervals','Drawing histograms','Bar graph vs histogram']},
+  {id:'D9_SCATTER',label:'Scatter Plots',              domain:'Data',       phase:'Senior',grade:9,level:10, skills:['Plotting bivariate data','Identifying correlation','Positive/negative/no correlation','Line of best fit']},
+  {id:'D9_INTERPRET',label:'Data Interpretation',     domain:'Data',       phase:'Senior',grade:9,level:10, skills:['Critical analysis','Misleading statistics','Drawing conclusions','Communicating findings']}
+];
+
+// ════════════════════════════════════════════════════════════════════
+// EDGES
+// ════════════════════════════════════════════════════════════════════
+const EDGES=[
+  {from:'NR_1TO1',to:'NR_RECOG'},{from:'NR_1TO1',to:'NR_COMPARE'},{from:'NR_RECOG',to:'N1_BONDS10'},{from:'NR_COMPARE',to:'N1_BONDS10'},
+  {from:'N1_BONDS10',to:'N1_ADDSUBT'},{from:'N1_ADDSUBT',to:'N2_BONDS20'},{from:'N2_BONDS20',to:'N2_PLACE'},{from:'N2_PLACE',to:'N3_TIMES'},
+  {from:'N3_TIMES',to:'N3_SHARING'},{from:'N3_SHARING',to:'N4_DIV'},{from:'N3_TIMES',to:'N4_FACTOR'},{from:'N4_FACTOR',to:'N4_FRAC'},
+  {from:'N4_FRAC',to:'N5_DECIMAL'},{from:'N4_FRAC',to:'N5_FRACOP'},{from:'N5_DECIMAL',to:'N6_PERCENT'},{from:'N5_FRACOP',to:'N6_RATIO'},
+  {from:'N2_PLACE',to:'N7_INTEGER'},{from:'N6_PERCENT',to:'N7_COMMON'},{from:'N3_TIMES',to:'N8_EXPONENT'},{from:'N7_INTEGER',to:'N8_RATIONAL'},
+  {from:'N4_FACTOR',to:'N9_FACTOR'},{from:'N8_EXPONENT',to:'N9_FACTOR'},
+  {from:'PR_COPY',to:'P1_CREATE'},{from:'P1_CREATE',to:'P2_NUMBER'},{from:'P2_NUMBER',to:'P3_GEOMETRIC'},{from:'P3_GEOMETRIC',to:'P4_INOUT'},
+  {from:'P4_INOUT',to:'P5_VARIABLE'},{from:'P5_VARIABLE',to:'P6_EQUATION'},{from:'P6_EQUATION',to:'P7_LINEAR'},{from:'P6_EQUATION',to:'P7_FUNCTION'},
+  {from:'P7_LINEAR',to:'P8_SOLVE'},{from:'P5_VARIABLE',to:'P8_EXPRESS'},{from:'P8_SOLVE',to:'P9_SIMULT'},{from:'P8_EXPRESS',to:'P9_FACTORISE'},
+  {from:'P7_LINEAR',to:'P9_GRAPHS'},
+  {from:'SR_DIR',to:'S1_POSITION'},{from:'SR_VIEW',to:'SR_SHAPE'},{from:'SR_SHAPE',to:'S1_2DSHAPE'},{from:'S1_POSITION',to:'S1_2DSHAPE'},
+  {from:'S1_2DSHAPE',to:'S2_PROPERTY'},{from:'S2_PROPERTY',to:'S3_3DPROP'},{from:'S3_3DPROP',to:'S4_SYMM'},{from:'S1_POSITION',to:'S4_GRID'},
+  {from:'S4_SYMM',to:'S5_VIEWS'},{from:'S3_3DPROP',to:'S6_ANGLES'},{from:'S6_ANGLES',to:'S6_CLASSIFY'},{from:'S4_GRID',to:'S7_COORD'},
+  {from:'S4_SYMM',to:'S7_TRANS'},{from:'S7_COORD',to:'S7_TRANS'},{from:'S6_ANGLES',to:'S8_CONSTR'},{from:'S6_ANGLES',to:'S8_PYTHAG'},
+  {from:'S6_ANGLES',to:'S8_LINES'},{from:'S7_TRANS',to:'S9_TRANS'},{from:'S7_COORD',to:'S9_TRANS'},{from:'S8_LINES',to:'S9_PROOF'},
+  {from:'S6_CLASSIFY',to:'S9_SIMILAR'},{from:'S8_CONSTR',to:'S9_PROOF'},
+  {from:'MR_COMPARE',to:'M1_NONSTAND'},{from:'MR_TIME',to:'M1_CLOCK'},{from:'M1_NONSTAND',to:'M2_LENGTH'},{from:'M1_CLOCK',to:'M2_TIME'},
+  {from:'M2_LENGTH',to:'M2_MONEY'},{from:'M2_LENGTH',to:'M3_MASS'},{from:'M2_LENGTH',to:'M3_CAPACITY'},{from:'M2_TIME',to:'M3_TIMEADV'},
+  {from:'M3_MASS',to:'M4_CONVERT'},{from:'M3_CAPACITY',to:'M4_CONVERT'},{from:'M2_LENGTH',to:'M4_PERIM'},{from:'M3_TIMEADV',to:'M4_TIMEELAP'},
+  {from:'M4_PERIM',to:'M5_AREA'},{from:'M4_TIMEELAP',to:'M5_TIME24'},{from:'M4_CONVERT',to:'M5_TEMP'},{from:'M5_AREA',to:'M6_AREATRI'},
+  {from:'M4_CONVERT',to:'M6_CONVERT'},{from:'M4_PERIM',to:'M7_CIRCUM'},{from:'M5_AREA',to:'M7_AREACIRCLE'},{from:'M5_AREA',to:'M8_VOLUME'},
+  {from:'M6_AREATRI',to:'M8_SURFACE'},{from:'M8_VOLUME',to:'M9_VOLCY'},{from:'M7_AREACIRCLE',to:'M9_VOLCY'},{from:'M8_SURFACE',to:'M9_SURFADV'},
+  {from:'DR_SORT',to:'D1_COLLECT'},{from:'D1_COLLECT',to:'D2_PICTOGRAPH'},{from:'D2_PICTOGRAPH',to:'D3_TALLY'},{from:'D3_TALLY',to:'D4_BARGRAPH'},
+  {from:'D3_TALLY',to:'D4_QUESTIONS'},{from:'D4_BARGRAPH',to:'D5_MODE'},{from:'D5_MODE',to:'D6_MEAN'},{from:'D4_BARGRAPH',to:'D6_PIE'},
+  {from:'D5_MODE',to:'D7_PROB'},{from:'D6_MEAN',to:'D7_SUMMARY'},{from:'D7_SUMMARY',to:'D8_RANGE'},{from:'D7_PROB',to:'D8_PROBADV'},
+  {from:'D4_BARGRAPH',to:'D9_HISTO'},{from:'D8_RANGE',to:'D9_INTERPRET'},{from:'S7_COORD',to:'D9_SCATTER'},
+  {from:'NR_1TO1',to:'DR_SORT'},{from:'N4_FRAC',to:'D6_PIE'},{from:'N6_PERCENT',to:'D6_PIE'},{from:'N5_DECIMAL',to:'M4_CONVERT'},
+  {from:'N3_TIMES',to:'M5_AREA'},{from:'N4_FRAC',to:'M6_AREATRI'},{from:'P7_LINEAR',to:'S7_COORD'},{from:'P7_LINEAR',to:'D9_SCATTER'},
+  {from:'S5_VIEWS',to:'M8_VOLUME'},{from:'S3_3DPROP',to:'M8_SURFACE'},{from:'N7_INTEGER',to:'S7_COORD'},{from:'N6_RATIO',to:'S9_SIMILAR'},
+  {from:'P9_FACTORISE',to:'N9_FACTOR'}
+];
+
+// ════════════════════════════════════════════════════════════════════
+// QUESTION BANK v2 — 2 probes per node
+// probe[0]: bare calculation  |  probe[1]: SA contextual word problem
+// ════════════════════════════════════════════════════════════════════
+const QUESTION_BANK=[
+  // ── NUMBERS ────────────────────────────────────────────────────
+  {n:'NR_1TO1',probes:[
+    {t:'calc',q:'Count each block carefully: ■ ■ ■ ■ ■ ■ ■ ■. How many blocks are there?',o:['6','7','8','9'],a:2},
+    {t:'context',q:'Sipho puts one pebble into a tin for each goat he counts. He places 5 pebbles. How many goats did he count?',o:['3','4','5','6'],a:2}]},
+  {n:'NR_RECOG',probes:[
+    {t:'calc',q:'Which numeral represents the number of fingers on one hand?',o:['3','4','5','6'],a:2},
+    {t:'context',q:"Nomsa's teacher writes the number for 'seven' on the board. Which numeral is it?",o:['6','7','8','9'],a:1}]},
+  {n:'NR_COMPARE',probes:[
+    {t:'calc',q:'Set A has 8 blocks. Set B has 5 blocks. Which statement is true?',o:['A < B','A = B','A > B','Cannot compare'],a:2},
+    {t:'context',q:'Thandi has 9 sweets and Bongani has 6. Who has MORE?',o:['Bongani','Same amount','Thandi','Cannot tell'],a:2}]},
+  {n:'N1_BONDS10',probes:[
+    {t:'calc',q:'What number fills the box: 6 + __ = 10?',o:['3','4','5','6'],a:1},
+    {t:'context',q:'A tuck shop has 10 pies. By break time 7 are sold. How many REMAIN on the shelf?',o:['2','3','4','5'],a:1}]},
+  {n:'N1_ADDSUBT',probes:[
+    {t:'calc',q:'John had 9 sweets and ate 4. How many remain?',o:['3','4','5','13'],a:2},
+    {t:'context',q:'Lerato had 7 marbles and won 5 more in a game. How many does she have NOW?',o:['2','10','11','12'],a:3}]},
+  {n:'N2_BONDS20',probes:[
+    {t:'calc',q:'What is 8 + 7?',o:['13','14','15','16'],a:2},
+    {t:'context',q:'There are 9 children on the school bus. At the next stop, 6 more get on. How many children in total?',o:['13','14','15','16'],a:2}]},
+  {n:'N2_PLACE',probes:[
+    {t:'calc',q:'In the number 34, what is the VALUE of the digit 3?',o:['3','13','30','43'],a:2},
+    {t:'context',q:'Mpho has 4 bags of 10 sweets each, plus 6 loose sweets. How many sweets altogether?',o:['46','40','64','406'],a:0}]},
+  {n:'N3_TIMES',probes:[
+    {t:'calc',q:'What is 6 × 7?',o:['36','42','48','54'],a:1},
+    {t:'context',q:'A minibus taxi has 7 rows of seats. Each row fits 4 passengers. How many seats in total?',o:['11','24','28','32'],a:2}]},
+  {n:'N3_SHARING',probes:[
+    {t:'calc',q:'24 apples shared equally among 4 friends. How many each?',o:['4','5','6','8'],a:2},
+    {t:'context',q:'Mrs Dlamini bakes 30 vetkoek and shares them equally among 5 tables. How many per table?',o:['5','6','7','8'],a:1}]},
+  {n:'N4_DIV',probes:[
+    {t:'calc',q:'What is 432 ÷ 8?',o:['50 remainder 2','54','56','58 remainder 1'],a:1},
+    {t:'context',q:'A spaza shop earns R504 over 7 days, earning the same each day. How much per day?',o:['R7','R72','R497','R3 528'],a:1}]},
+  {n:'N4_FRAC',probes:[
+    {t:'calc',q:'Which fraction is equivalent to 2/4?',o:['1/3','1/2','2/3','3/4'],a:1},
+    {t:'context',q:'Sipho eats 3 slices of a pizza cut into 6 equal slices. What fraction did he eat?',o:['1/6','1/3','1/2','2/3'],a:2}]},
+  {n:'N4_FACTOR',probes:[
+    {t:'calc',q:'Which set lists ALL factors of 12?',o:['1,2,3,4,6','1,2,3,4,6,12','2,3,4,6','1,3,4,12'],a:1},
+    {t:'context',q:'Which of these numbers is an exact factor of 18 (divides with no remainder)?',o:['4','5','6','7'],a:2}]},
+  {n:'N5_DECIMAL',probes:[
+    {t:'calc',q:'Which decimal is the LARGEST?',o:['0.9','0.19','0.099','0.91'],a:3},
+    {t:'context',q:'At a fruit shop oranges cost R0.85 and lemons cost R0.90. Which is MORE expensive?',o:['Orange (R0.85)','Lemon (R0.90)','They cost the same','Cannot tell'],a:1}]},
+  {n:'N5_FRACOP',probes:[
+    {t:'calc',q:'What is 3/8 + 2/8?',o:['5/16','5/8','6/8','1/2'],a:1},
+    {t:'context',q:'Thabo ate 1/4 of a loaf in the morning and 2/4 at lunch. What fraction of the loaf is LEFT?',o:['1/8','1/4','3/4','1/2'],a:1}]},
+  {n:'N6_PERCENT',probes:[
+    {t:'calc',q:'What is 20% of R150?',o:['R20','R25','R30','R35'],a:2},
+    {t:'context',q:'A spaza shop gives a 15% discount on a R60 school bag. How much do you SAVE?',o:['R6','R9','R15','R51'],a:1}]},
+  {n:'N6_RATIO',probes:[
+    {t:'calc',q:'A recipe needs 2 cups flour for every 3 cups sugar. For 6 cups flour, how much sugar?',o:['6 cups','7 cups','9 cups','12 cups'],a:2},
+    {t:'context',q:"Taxi A carries 5 passengers for every 3 that Taxi B carries. If Taxi B has 12 passengers, how many does Taxi A carry?",o:['10','15','20','25'],a:2}]},
+  {n:'N7_INTEGER',probes:[
+    {t:'calc',q:'What is −5 + 8?',o:['−13','−3','3','13'],a:2},
+    {t:'context',q:"Johannesburg's temperature was −2°C at night and rose 9°C by midday. What was the midday temperature?",o:['−11°C','7°C','11°C','21°C'],a:1}]},
+  {n:'N7_COMMON',probes:[
+    {t:'calc',q:'What is 3/4 ÷ 1/2?',o:['3/8','1 1/4','1 1/2','3/2'],a:2},
+    {t:'context',q:'A builder has 5/6 of a bag of cement. He uses 1/3 of a bag. How much cement REMAINS?',o:['4/9','1/2','2/3','5/6'],a:1}]},
+  {n:'N8_EXPONENT',probes:[
+    {t:'calc',q:'Simplify: 2³ × 2⁴',o:['2⁷','2¹²','4⁷','8⁷'],a:0},
+    {t:'context',q:'Load-shedding hours double each week. Week 1 = 2 hours. How many hours in week 4? (Express as a power of 2)',o:['2²','2³','2⁴','2⁵'],a:2}]},
+  {n:'N8_RATIONAL',probes:[
+    {t:'calc',q:'Which is a TERMINATING decimal?',o:['1/3 = 0.333...','1/7 = 0.142857...','1/4 = 0.25','2/3 = 0.666...'],a:2},
+    {t:'context',q:'Four friends split a R35 taxi fare equally. Each pays R35 ÷ 4. Is this amount terminating or recurring?',o:['Terminating: R8.75','Recurring: R8.333...','Terminating: R8.25','Cannot be divided'],a:0}]},
+  {n:'N9_FACTOR',probes:[
+    {t:'calc',q:'Factorise: x² + 5x + 6',o:['(x+1)(x+6)','(x+2)(x+3)','(x+3)(x+3)','(x−2)(x−3)'],a:1},
+    {t:'context',q:'The area of a rectangular garden is (x² + 7x + 12) m². Find the length and width expressions.',o:['(x+2)(x+6)','(x+3)(x+4)','(x+4)(x+4)','(x+1)(x+12)'],a:1}]},
+  // ── PATTERNS ───────────────────────────────────────────────────
+  {n:'PR_COPY',probes:[
+    {t:'calc',q:'These shapes repeat: ● ▲ ● ▲ ● ▲ — What comes NEXT?',o:['▲','●','■','★'],a:0},
+    {t:'context',q:'Busi claps, stamps, claps, stamps — this is her repeating pattern. What does she do AFTER the 6th action (stamp)?',o:['Clap','Stamp','Jump','Stop'],a:0}]},
+  {n:'P1_CREATE',probes:[
+    {t:'calc',q:'Which sequence is an ABB pattern?',o:['● ▲ ● ▲','● ▲ ▲ ● ▲ ▲','● ● ▲ ● ● ▲','▲ ● ▲ ● ▲'],a:1},
+    {t:'context',q:'Thandi strings beads: red, blue, blue, red, blue, blue. The RULE of her pattern is?',o:['ABA','ABB','AAB','ABC'],a:1}]},
+  {n:'P2_NUMBER',probes:[
+    {t:'calc',q:'Find the missing number: 5, 10, 15, __, 25',o:['18','19','20','22'],a:2},
+    {t:'context',q:'A taxi picks up 3 passengers at Stop 1, 6 at Stop 2, 9 at Stop 3. How many at Stop 5?',o:['12','13','14','15'],a:3}]},
+  {n:'P3_GEOMETRIC',probes:[
+    {t:'calc',q:'Pattern: 1, 4, 9, 16 ... What is the NEXT term?',o:['20','23','25','36'],a:2},
+    {t:'context',q:'A farmer plants maize in square grids: 1 row → 1 plant, 2 rows → 4, 3 rows → 9. How many in 5 rows?',o:['20','25','30','36'],a:1}]},
+  {n:'P4_INOUT',probes:[
+    {t:'calc',q:'Rule: × 3 then − 2. Input = 5. Output?',o:['11','13','15','17'],a:1},
+    {t:'context',q:'A spaza shop sells pens at R3 each plus a R2 bag fee. What is the TOTAL cost for 4 pens?',o:['R12','R14','R15','R6'],a:1}]},
+  {n:'P5_VARIABLE',probes:[
+    {t:'calc',q:'If x = 4, what is 3x − 5?',o:['5','7','9','12'],a:1},
+    {t:'context',q:'A taxi charges R8 per km plus a R5 base fee. For 6 km, what is the total cost?',o:['R48','R51','R53','R54'],a:2}]},
+  {n:'P6_EQUATION',probes:[
+    {t:'calc',q:'Solve: x + 7 = 15',o:['x = 7','x = 8','x = 9','x = 22'],a:1},
+    {t:'context',q:'Nomsa has some marbles. After she receives 9 more, she has 21. How many did she START with?',o:['12','13','14','30'],a:0}]},
+  {n:'P7_LINEAR',probes:[
+    {t:'calc',q:'In y = 2x + 3, what is the GRADIENT?',o:['1','2','3','5'],a:1},
+    {t:'context',q:'A minibus taxi fare is R5 plus R2 per km. In cost = 2k + 5, the gradient (2) represents...',o:['The base fare (R5)','The cost per km (R2)','Total km driven','Number of passengers'],a:1}]},
+  {n:'P7_FUNCTION',probes:[
+    {t:'calc',q:'Which ordered pair satisfies y = x − 3?',o:['(2, 6)','(5, 2)','(3, 0)','(1, 4)'],a:1},
+    {t:'context',q:'A water tank loses 3 litres per hour. Starting at 20 L, which rule gives litres (y) after x hours?',o:['y = 3x + 20','y = 20 − 3x','y = 20x − 3','y = 3 + 20x'],a:1}]},
+  {n:'P8_SOLVE',probes:[
+    {t:'calc',q:'Solve: 3(x − 2) = 12',o:['x = 2','x = 4','x = 6','x = 8'],a:2},
+    {t:'context',q:'A school buys 4 boxes of pencils plus 3 loose ones, totalling 27. How many pencils per box?',o:['4','5','6','7'],a:2}]},
+  {n:'P8_EXPRESS',probes:[
+    {t:'calc',q:'Expand and simplify: 2(x + 3) + 4x',o:['6x + 3','6x + 6','8x + 3','8x + 6'],a:1},
+    {t:'context',q:'A tuck shop gives each learner x peanuts and (x + 4) chips. For 3 learners, total items?',o:['3x + 4','6x + 4','6x + 12','3x + 12'],a:2}]},
+  {n:'P9_SIMULT',probes:[
+    {t:'calc',q:'Solve: y = 2x and x + y = 9',o:['x=2, y=7','x=3, y=6','x=4, y=5','x=5, y=4'],a:1},
+    {t:'context',q:'Two taxis carry 15 passengers total. Taxi A carries TWICE as many as Taxi B. How many does Taxi B carry?',o:['5','6','7','8'],a:0}]},
+  {n:'P9_FACTORISE',probes:[
+    {t:'calc',q:'Factorise completely: 4x² − 16',o:['4(x−2)(x+2)','(2x−4)(2x+4)','4(x²−4)','2(x−2)(2x+4)'],a:0},
+    {t:'context',q:'A square field has area (x² − 25) m². Which factorised form gives the two fence-length expressions?',o:['(x−5)²','(x−5)(x+5)','x(x−25)','(x+5)²'],a:1}]},
+  {n:'P9_GRAPHS',probes:[
+    {t:'calc',q:'A line has gradient −2 and y-intercept 5. Its equation?',o:['y = 2x + 5','y = −2x − 5','y = −2x + 5','y = 5x − 2'],a:2},
+    {t:'context',q:'A cellphone savings plan: y = −10x + 50. At which month x does savings reach zero?',o:['x = 4','x = 5','x = 6','x = 10'],a:1}]},
+  // ── SPACE & SHAPE ───────────────────────────────────────────────
+  {n:'SR_DIR',probes:[
+    {t:'calc',q:'You face North. You turn right. Which direction do you now face?',o:['North','South','East','West'],a:2},
+    {t:'context',q:'Sipho faces the school gate (East). He turns left to go to the tuck shop. Which direction does he walk?',o:['East','West','North','South'],a:2}]},
+  {n:'SR_VIEW',probes:[
+    {t:'calc',q:'Looking at a cube from directly ABOVE, what 2D shape do you see?',o:['Circle','Triangle','Rectangle','Square'],a:3},
+    {t:'context',q:'You look at a tin of Milo from the TOP. What shape do you see?',o:['Square','Rectangle','Circle','Triangle'],a:2}]},
+  {n:'SR_SHAPE',probes:[
+    {t:'calc',q:'Which 3D shape has a circular base and comes to a single point at the top?',o:['Cylinder','Cone','Sphere','Pyramid'],a:1},
+    {t:'context',q:'Which 3D shape is a SOCCER BALL most like?',o:['Cone','Cylinder','Sphere','Cube'],a:2}]},
+  {n:'S1_POSITION',probes:[
+    {t:'calc',q:'The book is "behind" the chair. Where is it relative to the chair?',o:['In front','On top','At the back','Under'],a:2},
+    {t:'context',q:'Lerato stands IN FRONT of the classroom door. Sipho stands BEHIND it. Sipho is on the...',o:['Other side of the door','Next to Lerato','Above the door','Near the window'],a:0}]},
+  {n:'S1_2DSHAPE',probes:[
+    {t:'calc',q:'A shape has 4 equal sides and 4 right angles. What is it?',o:['Rectangle','Rhombus','Square','Parallelogram'],a:2},
+    {t:'context',q:'The face of a 20c coin is which 2D shape?',o:['Square','Triangle','Circle','Pentagon'],a:2}]},
+  {n:'S2_PROPERTY',probes:[
+    {t:'calc',q:'How many sides does a hexagon have?',o:['4','5','6','8'],a:2},
+    {t:'context',q:'A soccer field has 4 straight sides with all right angles, short sides 68 m and long sides 105 m. This shape is a...?',o:['Square','Rectangle','Rhombus','Trapezium'],a:1}]},
+  {n:'S3_3DPROP',probes:[
+    {t:'calc',q:'A rectangular prism has how many faces?',o:['4','5','6','8'],a:2},
+    {t:'context',q:'A Weetbix box is a rectangular prism. How many flat FACES does it have?',o:['4','5','6','8'],a:2}]},
+  {n:'S4_SYMM',probes:[
+    {t:'calc',q:'Where is the line of symmetry of the letter "A"?',o:['Horizontal through middle','Vertical through top point','Diagonal','No line of symmetry'],a:1},
+    {t:'context',q:"A butterfly's wings are mirror images of each other. The fold line between them is called a...?",o:['Axis of rotation','Line of symmetry','Centre point','Parallel line'],a:1}]},
+  {n:'S4_GRID',probes:[
+    {t:'calc',q:'On a grid map, the position (C, 4) means?',o:['Column C, Row 4','Row C, Column 4','3rd column, 4th row','4th column, 3rd row'],a:0},
+    {t:'context',q:'On a school treasure map, the prize is at column F, row 3. You record this as...?',o:['(3, F)','(F, 3)','F3','Row 3, Col F'],a:1}]},
+  {n:'S5_VIEWS',probes:[
+    {t:'calc',q:'The view of a cylinder from the SIDE is?',o:['Circle','Triangle','Rectangle','Oval'],a:2},
+    {t:'context',q:'You look at a common house BRICK from directly ABOVE. Which shape do you see?',o:['Circle','Square','Rectangle','Triangle'],a:2}]},
+  {n:'S6_ANGLES',probes:[
+    {t:'calc',q:'An angle of 135° is best described as?',o:['Acute','Right angle','Obtuse','Reflex'],a:2},
+    {t:'context',q:"The hands of a clock form an angle at 3 o'clock. This angle is a...?",o:['Acute angle (< 90°)','Right angle (90°)','Obtuse angle (> 90°)','Straight angle (180°)'],a:1}]},
+  {n:'S6_CLASSIFY',probes:[
+    {t:'calc',q:'A triangle with ALL THREE sides equal is called?',o:['Isosceles','Scalene','Equilateral','Right-angled'],a:2},
+    {t:'context',q:'The warning signs on South African roads are triangles with 3 equal sides. What type are they?',o:['Isosceles','Scalene','Equilateral','Right-angled'],a:2}]},
+  {n:'S7_COORD',probes:[
+    {t:'calc',q:'The point (−3, 2) is in which quadrant of the Cartesian plane?',o:['Quadrant I','Quadrant II','Quadrant III','Quadrant IV'],a:1},
+    {t:'context',q:'On a town plan, City Hall is at (4, −2). In which quadrant is it? (x is positive, y is negative)',o:['Quadrant I','Quadrant II','Quadrant III','Quadrant IV'],a:3}]},
+  {n:'S7_TRANS',probes:[
+    {t:'calc',q:'A shape moves 5 units to the right without rotating. This is called?',o:['Reflection','Rotation','Translation','Enlargement'],a:2},
+    {t:'context',q:'The Springbok logo on a rugby jersey is "flipped" for the mirror side. This is a...?',o:['Translation','Rotation','Reflection','Enlargement'],a:2}]},
+  {n:'S8_CONSTR',probes:[
+    {t:'calc',q:'To bisect a line segment, arcs from both endpoints cross at the...?',o:['Endpoints','Radius point','Quarter points','Midpoint of the segment'],a:3},
+    {t:'context',q:'A builder uses a compass to find the EXACT MIDDLE of a wall by drawing arcs from each end. The arcs cross at...?',o:['The wall edge','The midpoint of the wall','A quarter way along','The end of the wall'],a:1}]},
+  {n:'S8_PYTHAG',probes:[
+    {t:'calc',q:'A right triangle has legs 3 cm and 4 cm. What is the hypotenuse?',o:['5 cm','6 cm','7 cm','√7 cm'],a:0},
+    {t:'context',q:'A ladder leans against a wall. Its base is 6 m from the wall and the wall height is 8 m. How long is the ladder?',o:['10 m','12 m','14 m','100 m'],a:0}]},
+  {n:'S8_LINES',probes:[
+    {t:'calc',q:'When two parallel lines are cut by a transversal, alternate interior angles are?',o:['Supplementary','Complementary','Equal','Vertically opposite'],a:2},
+    {t:'context',q:'Two parallel railway tracks are crossed by a road at 65°. The alternate angle on the other track is?',o:['25°','65°','115°','180°'],a:1}]},
+  {n:'S9_TRANS',probes:[
+    {t:'calc',q:'Point A(2, 3) is reflected across the y-axis. New coordinates?',o:['(2, −3)','(−2, 3)','(−2, −3)','(3, 2)'],a:1},
+    {t:'context',q:'A logo at (5, 2) is reflected across the y-axis for packaging. Its new position is?',o:['(5, −2)','(−5, 2)','(−5, −2)','(2, 5)'],a:1}]},
+  {n:'S9_PROOF',probes:[
+    {t:'calc',q:'To prove two triangles congruent by SAS, you need?',o:['2 angles + 1 side','2 sides + the included angle','3 sides','3 angles'],a:1},
+    {t:'context',q:'To prove two fence sections are identical (congruent) by SAS, a surveyor measures two sides and the...?',o:['Third side','Angle between them (included angle)','Perimeter','Total area'],a:1}]},
+  {n:'S9_SIMILAR',probes:[
+    {t:'calc',q:'Two similar triangles: one side is 4 cm, corresponding side is 8 cm. Scale factor?',o:['1/2','2','4','8'],a:1},
+    {t:'context',q:'A small photo is 10 cm wide. It is enlarged to 25 cm wide. The scale factor is?',o:['2.0','2.5','5.0','15'],a:1}]},
+  // ── MEASUREMENT ─────────────────────────────────────────────────
+  {n:'MR_COMPARE',probes:[
+    {t:'calc',q:'Which is heavier: a brick or a feather?',o:['Feather','Brick','Same weight','Cannot tell'],a:1},
+    {t:'context',q:'A 2 kg bag of mielie meal vs. a 2 kg bag of sugar. Which is heavier?',o:['The mielie meal','The sugar','They weigh the same','Cannot be compared'],a:2}]},
+  {n:'MR_TIME',probes:[
+    {t:'calc',q:'Which event comes AFTER morning in a typical school day?',o:['Night','Afternoon','Before breakfast','Yesterday'],a:1},
+    {t:'context',q:'Sipho wakes up, goes to school, comes home, then goes to sleep. Correct ORDER?',o:['School → Home → Sleep → Wake','Wake → School → Home → Sleep','Home → Wake → School → Sleep','Wake → Sleep → School → Home'],a:1}]},
+  {n:'M1_NONSTAND',probes:[
+    {t:'calc',q:'Why use standard units like centimetres instead of hand-spans?',o:['Hands move too fast','Same measurement for everyone','Hands are too big','You cannot measure with hands'],a:1},
+    {t:'context',q:'Thando measures a desk as 5 hand-spans; Nomsa measures it as 7 hand-spans. Why the difference?',o:['The desk changed size','Their hands are different sizes','One cannot count','They used different desks'],a:1}]},
+  {n:'M1_CLOCK',probes:[
+    {t:'calc',q:'How many hours are in one full day?',o:['12','20','24','60'],a:2},
+    {t:'context',q:'School starts on Monday and ends on Friday. How many school DAYS is that?',o:['3','4','5','6'],a:2}]},
+  {n:'M2_LENGTH',probes:[
+    {t:'calc',q:'A pencil is 14.5 cm. If you start at the 1 cm mark on the ruler, you wrongly read it as?',o:['13.5 cm','14.5 cm','15.5 cm','16 cm'],a:2},
+    {t:'context',q:'A classroom is about 8 metres wide. How many centimetres is that?',o:['8 cm','80 cm','800 cm','8 000 cm'],a:2}]},
+  {n:'M2_TIME',probes:[
+    {t:'calc',q:"On an analogue clock the minute hand points to 6. How many minutes does this represent?",o:['6 minutes','12 minutes','30 minutes','60 minutes'],a:2},
+    {t:'context',q:'The school bell rings at half past eight. In digit notation, this is?',o:['8:00','8:15','8:30','8:45'],a:2}]},
+  {n:'M2_MONEY',probes:[
+    {t:'calc',q:'You have R10 and buy an item for R6.50. Your change?',o:['R2.50','R3.00','R3.50','R4.00'],a:2},
+    {t:'context',q:'At the tuck shop a juice costs R5.50 and a pie costs R8.00. You pay with R20. How much change?',o:['R6.00','R6.50','R7.00','R14.50'],a:1}]},
+  {n:'M3_MASS',probes:[
+    {t:'calc',q:'1 kilogram equals how many grams?',o:['10 g','100 g','1 000 g','10 000 g'],a:2},
+    {t:'context',q:'A bag of oranges weighs 3 kg. A bag of apples weighs 2 500 g. Which is HEAVIER?',o:['Oranges (3 000 g)','Apples (2 500 g)','They weigh the same','Cannot tell'],a:0}]},
+  {n:'M3_CAPACITY',probes:[
+    {t:'calc',q:'1 litre equals how many millilitres?',o:['10 ml','100 ml','500 ml','1 000 ml'],a:3},
+    {t:'context',q:'A JoJo water tank holds 500 litres. A bucket holds 10 litres. How many FULL buckets fill the tank?',o:['5','50','100','500'],a:1}]},
+  {n:'M3_TIMEADV',probes:[
+    {t:'calc',q:'A movie starts at 14:20 and runs 1 hour 45 minutes. When does it end?',o:['15:45','15:55','16:05','16:15'],a:2},
+    {t:'context',q:'School ends at 14:15. The minibus takes 35 minutes to reach home. When do you arrive?',o:['14:35','14:45','14:50','15:00'],a:2}]},
+  {n:'M4_CONVERT',probes:[
+    {t:'calc',q:'2.5 km = how many metres?',o:['25 m','250 m','2 500 m','25 000 m'],a:2},
+    {t:'context',q:'A running track is 400 m long. How many FULL laps to run 2 km?',o:['4','5','6','8'],a:1}]},
+  {n:'M4_PERIM',probes:[
+    {t:'calc',q:'A rectangle is 8 m long and 3 m wide. What is its perimeter?',o:['11 m','22 m','24 m','48 m'],a:1},
+    {t:'context',q:'Farmer Dlamini wants to fence a plot 12 m long and 7 m wide. How many metres of fencing?',o:['19 m','28 m','38 m','84 m'],a:2}]},
+  {n:'M4_TIMEELAP',probes:[
+    {t:'calc',q:'A train departs at 09:45 and arrives at 13:15. Journey length?',o:['3 h 15 min','3 h 30 min','4 h 15 min','4 h 30 min'],a:1},
+    {t:'context',q:'A learner starts homework at 15:30 and finishes at 17:15. How long did it take?',o:['1 h 30 min','1 h 45 min','2 h 15 min','2 h 45 min'],a:1}]},
+  {n:'M5_AREA',probes:[
+    {t:'calc',q:'A rectangle is 6 cm wide and 9 cm long. What is its area?',o:['30 cm²','45 cm²','54 cm²','63 cm²'],a:2},
+    {t:'context',q:'A classroom floor is 7 m long and 5 m wide. How many square metres of floor?',o:['24 m²','30 m²','35 m²','70 m²'],a:2}]},
+  {n:'M5_TIME24',probes:[
+    {t:'calc',q:'Convert 3:30 PM to 24-hour clock time.',o:['03:30','13:30','15:30','21:30'],a:2},
+    {t:'context',q:'A Metrorail train departs at 17:45. In 12-hour notation this is?',o:['5:45 AM','7:45 PM','5:45 PM','7:45 AM'],a:2}]},
+  {n:'M5_TEMP',probes:[
+    {t:'calc',q:'Temperature drops from 4°C to −3°C. By how much did it drop?',o:['1°C','4°C','7°C','−7°C'],a:2},
+    {t:'context',q:"Cape Town's daytime high was 32°C and overnight low was 18°C. The temperature RANGE was?",o:['14°C','18°C','32°C','50°C'],a:0}]},
+  {n:'M6_AREATRI',probes:[
+    {t:'calc',q:'Triangle: base 10 cm, height 6 cm. Area?',o:['16 cm²','30 cm²','60 cm²','120 cm²'],a:1},
+    {t:'context',q:'A triangular garden bed has base 8 m and height 5 m. How much soil area (m²) does it cover?',o:['13 m²','20 m²','40 m²','80 m²'],a:1}]},
+  {n:'M6_CONVERT',probes:[
+    {t:'calc',q:'5 m² = how many cm²?',o:['500 cm²','5 000 cm²','50 000 cm²','500 000 cm²'],a:2},
+    {t:'context',q:'A cricket pitch is exactly 20.12 m long. How many centimetres is that?',o:['2 012 cm','201.2 cm','20 120 cm','201 200 cm'],a:0}]},
+  {n:'M7_CIRCUM',probes:[
+    {t:'calc',q:'Circle: diameter 14 cm. Circumference? (π ≈ 22/7)',o:['22 cm','44 cm','88 cm','154 cm'],a:1},
+    {t:'context',q:'A bicycle wheel has diameter 70 cm. How far does it travel in ONE full turn? (π ≈ 22/7)',o:['110 cm','220 cm','440 cm','15 400 cm'],a:1}]},
+  {n:'M7_AREACIRCLE',probes:[
+    {t:'calc',q:'Circle: radius 7 cm. Area? (π ≈ 22/7)',o:['44 cm²','88 cm²','154 cm²','616 cm²'],a:2},
+    {t:'context',q:'A circular irrigation field has radius 14 m. What is its area? (π ≈ 22/7)',o:['88 m²','154 m²','616 m²','1 232 m²'],a:2}]},
+  {n:'M8_VOLUME',probes:[
+    {t:'calc',q:'Box: 5 cm × 4 cm × 3 cm. Volume?',o:['12 cm³','24 cm³','47 cm³','60 cm³'],a:3},
+    {t:'context',q:'A classroom is 9 m long, 6 m wide and 3 m high. What is its volume?',o:['18 m³','54 m³','162 m³','180 m³'],a:2}]},
+  {n:'M8_SURFACE',probes:[
+    {t:'calc',q:'A cube has side length 4 cm. Total surface area?',o:['16 cm²','64 cm²','96 cm²','128 cm²'],a:2},
+    {t:'context',q:'You wrap ALL faces of a shoebox (30 cm × 15 cm × 10 cm) in paper. How much paper is needed?',o:['900 cm²','1 800 cm²','2 700 cm²','4 500 cm²'],a:1}]},
+  {n:'M9_VOLCY',probes:[
+    {t:'calc',q:'Cylinder: r = 3 cm, h = 10 cm. Volume? (π ≈ 3.14)',o:['94.2 cm³','188.4 cm³','282.6 cm³','942 cm³'],a:2},
+    {t:'context',q:'A cylindrical water tank has radius 1 m and height 2 m. Volume? (π ≈ 3.14)',o:['3.14 m³','6.28 m³','9.42 m³','12.56 m³'],a:1}]},
+  {n:'M9_SURFADV',probes:[
+    {t:'calc',q:'The formula for total surface area of a cylinder is?',o:['2πr + πrh','2πrh','2πr² + 2πrh','πr²h'],a:2},
+    {t:'context',q:'A cylindrical tin (r = 7 cm, h = 20 cm) needs a SIDE label only. What area of label is needed? (π ≈ 22/7)',o:['44 cm²','440 cm²','880 cm²','3 080 cm²'],a:2}]},
+  // ── DATA HANDLING ───────────────────────────────────────────────
+  {n:'DR_SORT',probes:[
+    {t:'calc',q:'Sorting toys by colour AND type (2 colours × 2 types). How many groups?',o:['2','3','4','6'],a:2},
+    {t:'context',q:"Thabo sorts his marbles into 'red big', 'red small', 'blue big', 'blue small'. He sorted by how many attributes?",o:['1','2','3','4'],a:1}]},
+  {n:'D1_COLLECT',probes:[
+    {t:'calc',q:'"What is your favourite fruit?" gives what type of data?',o:['Continuous numerical','Discrete categorical','Continuous categorical','Precise measurement'],a:1},
+    {t:'context',q:'Mrs Dlamini asks learners to raise hands if they WALK to school. This is?',o:['A survey (categorical)','A precise measurement','A controlled experiment','A simulation'],a:0}]},
+  {n:'D2_PICTOGRAPH',probes:[
+    {t:'calc',q:'In a pictograph, ⭐ = 5 students. Three stars (⭐⭐⭐) represents?',o:['3','5','10','15'],a:3},
+    {t:'context',q:'A class pictograph: ⚽ = 10 students. The Football row shows ⚽⚽⚽½. How many students chose football?',o:['3','30','35','40'],a:2}]},
+  {n:'D3_TALLY',probes:[
+    {t:'calc',q:'Which correctly shows 17 items using tally marks (groups of 5)?',o:['IIII IIII IIII II','IIIII IIIII IIIII II','IIIII IIIII IIIII I','IIII IIII IIIII III'],a:1},
+    {t:'context',q:'A tuck shop tallies 23 pies sold. How many full bundles of 5 are there and what is the remainder?',o:['4 bundles, 3 remaining','3 bundles, 8 remaining','5 bundles, 2 remaining','4 bundles, 2 remaining'],a:0}]},
+  {n:'D4_BARGRAPH',probes:[
+    {t:'calc',q:"A bar sits between 40 and 50, closer to 50. Best estimate?",o:['42','44','46','48'],a:2},
+    {t:'context',q:'A bar graph shows Grade 4 scored 85%, Grade 5 scored 92%, Grade 6 scored 78%. Which grade scored LOWEST?',o:['Grade 4','Grade 5','Grade 6','Cannot tell'],a:2}]},
+  {n:'D4_QUESTIONS',probes:[
+    {t:'calc',q:'A graph shows 90% prefer Brand A, but the sample was only 10 people. This graph is likely?',o:['Perfectly accurate','Biased due to small sample','Impossible to make','Definitely wrong'],a:1},
+    {t:'context',q:'A cellphone company surveys only its OWN customers about the "best network". This data is most likely?',o:['Representative of all users','Biased towards their brand','Completely random','Scientifically rigorous'],a:1}]},
+  {n:'D5_MODE',probes:[
+    {t:'calc',q:'Find the MODE of: 3, 7, 5, 3, 9, 3, 7',o:['3','5','7','9'],a:0},
+    {t:'context',q:"Learners' test scores: 60, 72, 65, 72, 80, 72, 58. What is the MODE?",o:['65','70','72','80'],a:2}]},
+  {n:'D6_MEAN',probes:[
+    {t:'calc',q:'Find the MEAN of: 12, 8, 15, 10, 5',o:['8','10','15','50'],a:1},
+    {t:'context',q:"A cricket player's scores over 5 innings: 45, 60, 30, 75, 40. What is their batting AVERAGE (mean)?",o:['40','50','55','60'],a:1}]},
+  {n:'D6_PIE',probes:[
+    {t:'calc',q:'A pie chart sector is 25% of the whole. How many degrees is it?',o:['25°','45°','90°','180°'],a:2},
+    {t:'context',q:'A household budget shows transport takes 30% of spending. In a 360° pie chart, the transport sector is?',o:['30°','90°','108°','180°'],a:2}]},
+  {n:'D7_PROB',probes:[
+    {t:'calc',q:'A fair die is rolled once. Probability of rolling a number GREATER than 4?',o:['1/6','2/6','3/6','4/6'],a:1},
+    {t:'context',q:'A bag has 3 blue, 2 red, and 1 green marble. Probability of pulling out a BLUE marble?',o:['1/6','1/3','1/2','2/3'],a:2}]},
+  {n:'D7_SUMMARY',probes:[
+    {t:'calc',q:'Which average is MOST affected by a very large outlier?',o:['Mode','Median','Mean','Range'],a:2},
+    {t:'context',q:"The CEO earns R5 million while workers earn R20 000. Which average would workers use to show the TYPICAL salary?",o:['Mode','Median','Mean (average)','Range'],a:1}]},
+  {n:'D8_RANGE',probes:[
+    {t:'calc',q:'Dataset: 3, 7, 2, 15, 8, 4. The RANGE is?',o:['7','12','13','15'],a:2},
+    {t:'context',q:'Temperature over a week: 18, 22, 25, 30, 28, 26, 20°C. The temperature range is?',o:['7°C','10°C','12°C','15°C'],a:2}]},
+  {n:'D8_PROBADV',probes:[
+    {t:'calc',q:'Bag: 3 red, 2 blue. First draw is red (not replaced). P(second draw = red)?',o:['3/5','2/4','2/5','3/4'],a:1},
+    {t:'context',q:'Lucky draw drum has 5 tickets, 2 are winners. First winner is drawn and REMOVED. P(next = winner)?',o:['2/5','1/4','1/5','2/4'],a:1}]},
+  {n:'D9_HISTO',probes:[
+    {t:'calc',q:'In a histogram (unlike a bar graph), the bars are?',o:['Always differently coloured','Drawn with gaps between them','Touching each other — no gaps','Always the same exact height'],a:2},
+    {t:'context',q:"A school records learners' heights in groups: 140–150 cm, 150–160 cm, etc. The best graph for this?",o:['Pie chart','Bar graph (with gaps)','Histogram (no gaps)','Pictograph'],a:2}]},
+  {n:'D9_SCATTER',probes:[
+    {t:'calc',q:'Scatter plot: as height increases, weight also tends to increase. This is?',o:['Negative correlation','No correlation','Positive correlation','Perfect correlation'],a:2},
+    {t:'context',q:'As hours of study increase, test marks also increase. What type of correlation is this?',o:['Negative','No correlation','Positive','Inverse'],a:2}]},
+  {n:'D9_INTERPRET',probes:[
+    {t:'calc',q:'A bar chart y-axis starts at 95 (not 0), making a small difference look huge. This is?',o:['Good data design','A misleading graph','A histogram','An outlier'],a:1},
+    {t:'context',q:'"70% of South Africans prefer Brand X" — but only 20 people in one city were surveyed. This claim is problematic because?',o:['70% is not a real number','Sample is too small and not representative','All studies use 20 people','The product must be wrong'],a:1}]}
+];
+
+// ════════════════════════════════════════════════════════════════════
+// LOOKUP MAPS & CONSTANTS
+// ════════════════════════════════════════════════════════════════════
+const nodeMap={}, qMap={};
+CURRICULUM_NODES.forEach(n=>nodeMap[n.id]=n);
+QUESTION_BANK.forEach(q=>qMap[q.n]=q);
+const PHASE_COLORS={R:'#bc8cff',Found:'#3fb950',Inter:'#d29922',Senior:'#f78166'};
+const PHASE_LABELS={R:'Grade R',Found:'Foundation',Inter:'Intermediate',Senior:'Senior'};
+const LS_KEY='lumen_v2_session', LS_RES='lumen_v2_results';
+
+// ════════════════════════════════════════════════════════════════════
+// ENGINE STATE
+// ════════════════════════════════════════════════════════════════════
+let state={
+  selectedGrade:null,sessionId:null,startTime:null,
+  queue:[],currentIdx:0,
+  scores:{},           // nodeId → {result,score}
+  currentProbeStage:0, // 0=calc probe, 1=validation probe
+  firstAttemptResult:null,
+  traversalLog:[],complete:false,answered:false
+};
+
+// ════════════════════════════════════════════════════════════════════
+// GRAPH FUNCTIONS
+// ════════════════════════════════════════════════════════════════════
+function getPrereqs(id){return EDGES.filter(e=>e.to===id).map(e=>e.from)}
+
+function enqueuePrereqs(nodeId){
+  const prereqs=getPrereqs(nodeId);
+  const toAdd=prereqs.filter(pid=>!state.scores[pid]&&!state.queue.slice(state.currentIdx+1).includes(pid));
+  state.queue.splice(state.currentIdx+1,0,...toAdd);
+  if(toAdd.length) state.traversalLog.push({from:nodeId,added:toAdd});
+}
+
+function buildInitialQueue(gradeStr){
+  const g=gradeStr==='R'?0:parseInt(gradeStr);
+  const start=CURRICULUM_NODES.filter(n=>n.grade===g);
+  start.sort((a,b)=>a.domain.localeCompare(b.domain)||a.level-b.level);
+  return start.map(n=>n.id);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// PERSISTENCE
+// ════════════════════════════════════════════════════════════════════
+function saveSession(){try{localStorage.setItem(LS_KEY,JSON.stringify(state))}catch(e){}}
+function loadSession(){try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r)}catch(e){}return null}
+function clearSession(){try{localStorage.removeItem(LS_KEY)}catch(e){}}
+function saveResults(r){try{const a=JSON.parse(localStorage.getItem(LS_RES)||'[]');a.unshift(r);if(a.length>10)a.splice(10);localStorage.setItem(LS_RES,JSON.stringify(a))}catch(e){}}
+
+// ════════════════════════════════════════════════════════════════════
+// WELCOME FLOW
+// ════════════════════════════════════════════════════════════════════
+function selectGrade(btn,grade){
+  document.querySelectorAll('.grade-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.selectedGrade=grade;
+  document.getElementById('btn-start').disabled=false;
+}
+
+function checkResume(){
+  const saved=loadSession();
+  if(saved&&!saved.complete&&saved.currentIdx<saved.queue.length){
+    const pct=Math.round((saved.currentIdx/Math.max(saved.queue.length,1))*100);
+    document.getElementById('resume-sub-text').textContent=`Grade ${saved.selectedGrade} session · ${pct}% complete · ${Object.keys(saved.scores).length} questions answered`;
+    document.getElementById('resume-banner').classList.add('show');
+  }
+}
+
+function resumeSession(){
+  const saved=loadSession();
+  if(!saved)return;
+  Object.assign(state,saved);
+  document.getElementById('resume-banner').classList.remove('show');
+  showScreen('screen-assess');
+  renderCurrentQuestion();
+}
+
+function discardSession(){clearSession();document.getElementById('resume-banner').classList.remove('show')}
+
+function startAssessment(){
+  if(!state.selectedGrade)return;
+  clearSession();
+  state={selectedGrade:state.selectedGrade,sessionId:Date.now().toString(36),startTime:Date.now(),
+    queue:buildInitialQueue(state.selectedGrade),currentIdx:0,scores:{},currentProbeStage:0,
+    firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
+  saveSession();
+  showScreen('screen-assess');
+  renderCurrentQuestion();
+}
+
+// ════════════════════════════════════════════════════════════════════
+// RENDER QUESTION  (handles both probe stages)
+// ════════════════════════════════════════════════════════════════════
+function renderCurrentQuestion(){
+  if(state.currentIdx>=state.queue.length){completeAssessment();return}
+
+  const nodeId=state.queue[state.currentIdx];
+  const node=nodeMap[nodeId];
+  const qEntry=qMap[nodeId];
+  const stage=state.currentProbeStage;
+  const probe=qEntry?.probes?.[stage]??null;
+
+  state.answered=false;
+
+  // Reset UI
+  document.getElementById('btn-dont-know').disabled=false;
+  document.getElementById('btn-next').classList.remove('visible','validate-style');
+  document.getElementById('btn-next').textContent='Next →';
+  document.getElementById('feedback-banner').className='feedback-banner';
+
+  // Progress
+  const pct=Math.round((state.currentIdx/Math.max(state.queue.length,1))*100);
+  document.getElementById('progress-bar').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=`Question ${state.currentIdx+1} of ${state.queue.length}`;
+  document.getElementById('progress-count').textContent=pct+'% complete';
+
+  // Card validation mode
+  const card=document.getElementById('question-card');
+  if(stage===1){card.classList.add('validation-mode')}else{card.classList.remove('validation-mode')}
+
+  // Meta
+  const phaseColor=PHASE_COLORS[node.phase]||'#58a6ff';
+  const gradeNum=node.grade===0?'R':node.grade;
+  const probeBadgeHTML=stage===0
+    ? `<span class="q-probe-badge calc">🔢 Calculation</span>`
+    : `<span class="q-probe-badge validation">🔄 Validation Probe</span>`;
+  document.getElementById('q-meta').innerHTML=
+    `<span class="q-phase-badge" style="background:${phaseColor}">${PHASE_LABELS[node.phase]} · Gr ${gradeNum}</span>`+
+    `<span class="q-domain-badge">${node.domain}</span>`+
+    probeBadgeHTML+
+    `<span class="q-node-id">${nodeId}</span>`;
+
+  // Question
+  document.getElementById('q-text').textContent=probe?probe.q:`Explain the key concept of "${node.label}".`;
+
+  // Skills
+  document.getElementById('skill-context').innerHTML=node.skills.map(s=>`<span class="skill-chip">${s}</span>`).join('');
+
+  // Options
+  if(probe){
+    document.getElementById('options-grid').innerHTML=probe.o.map((opt,i)=>`
+      <button class="option-btn" id="opt-${i}" onclick="selectOption(${i})">
+        <span class="option-letter">${['A','B','C','D'][i]}</span>
+        <span class="option-text">${opt}</span>
+      </button>`).join('');
+  }else{
+    document.getElementById('options-grid').innerHTML=
+      `<div style="grid-column:1/-1;color:var(--text-muted);font-size:13px;padding:12px 0;">No multiple-choice available for this topic — mark manually after oral assessment.</div>`;
+  }
+
+  // Traversal hint
+  const preqC=getPrereqs(nodeId).length;
+  if(stage===1){
+    document.getElementById('traversal-text').textContent='Validation probe — correct here will cancel gap traversal';
+  }else{
+    document.getElementById('traversal-text').textContent=preqC>0
+      ?`A wrong answer will trigger a contextual word problem to confirm the gap`
+      :'Root concept — validation probe applies if wrong';
+  }
+
+  // Animate
+  card.style.animation='none';card.offsetHeight;card.style.animation='slide-in .35s cubic-bezier(.4,0,.2,1)';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ANSWER HANDLING  (2-stage logic)
+// ════════════════════════════════════════════════════════════════════
+function selectOption(optIdx){
+  if(state.answered)return;
+  state.answered=true;
+  const nodeId=state.queue[state.currentIdx];
+  const probe=qMap[nodeId]?.probes?.[state.currentProbeStage];
+  const isCorrect=probe&&optIdx===probe.a;
+
+  // Highlight buttons
+  document.querySelectorAll('.option-btn').forEach((btn,i)=>{
+    btn.classList.add('disabled');
+    if(probe&&i===probe.a)btn.classList.add('correct');
+    else if(i===optIdx&&!isCorrect)btn.classList.add('wrong');
+  });
+  document.getElementById('btn-dont-know').disabled=true;
+
+  if(state.currentProbeStage===0){
+    if(isCorrect){
+      // Stage 0 correct → confirmed mastery
+      state.scores[nodeId]={result:'correct',score:1.0};
+      showFeedback('correct','✅ Correct!');
+      showNextBtn('Next →',false);
+    }else{
+      // Stage 0 wrong → don't record yet, trigger validation probe
+      state.firstAttemptResult='wrong';
+      showFeedback('wrong',`❌ Not quite. Let's try a different approach on the same topic to be sure.`);
+      showNextBtn('Try contextual question →',true);
+    }
+  }else{
+    // Stage 1 (validation probe)
+    if(isCorrect){
+      // Answered calc wrong but context correct → it was a slip!
+      state.scores[nodeId]={result:'slip',score:0.5};
+      showFeedback('slip','🎯 Slip detected — you understood the concept in context! No gap traversal.');
+      showNextBtn('Next →',false);
+    }else{
+      // Both probes wrong → confirmed gap, traverse
+      state.scores[nodeId]={result:'wrong',score:0.0};
+      enqueuePrereqs(nodeId);
+      showFeedback('wrong','❌ Gap confirmed. Pre-requisite nodes added to the queue.');
+      showNextBtn('Next →',false);
+    }
+    saveSession();
+  }
+}
+
+function answerDontKnow(){
+  if(state.answered)return;
+  state.answered=true;
+  const nodeId=state.queue[state.currentIdx];
+  const probe=qMap[nodeId]?.probes?.[state.currentProbeStage];
+  if(probe){document.querySelectorAll('.option-btn')[probe.a]?.classList.add('correct')}
+  document.querySelectorAll('.option-btn').forEach(btn=>btn.classList.add('disabled'));
+  document.getElementById('btn-dont-know').disabled=true;
+
+  if(state.currentProbeStage===0){
+    state.firstAttemptResult='skipped';
+    showFeedback('skipped',"✋ No worries. Let's confirm with a real-world question on the same topic.");
+    showNextBtn('Try contextual question →',true);
+  }else{
+    // Both skipped → confirmed gap
+    state.scores[nodeId]={result:'skipped',score:0.0};
+    enqueuePrereqs(nodeId);
+    showFeedback('skipped',"✋ Gap confirmed. Pre-requisite nodes added to the diagnostic queue.");
+    showNextBtn('Next →',false);
+    saveSession();
+  }
+}
+
+function showFeedback(type,msg){
+  const el=document.getElementById('feedback-banner');
+  el.textContent=msg;
+  el.className='feedback-banner '+type+' show';
+}
+
+function showNextBtn(label,isValidate){
+  const btn=document.getElementById('btn-next');
+  btn.textContent=label;
+  btn.classList.add('visible');
+  if(isValidate)btn.classList.add('validate-style');
+}
+
+// ════════════════════════════════════════════════════════════════════
+// NEXT BUTTON  — handles both stage transitions
+// ════════════════════════════════════════════════════════════════════
+function nextQuestion(){
+  const nodeId=state.queue[state.currentIdx];
+  const isTransitionToValidation=state.currentProbeStage===0&&state.firstAttemptResult!==null&&!state.scores[nodeId];
+
+  if(isTransitionToValidation){
+    // Move to validation probe for same node
+    state.currentProbeStage=1;
+    saveSession();
+    renderCurrentQuestion();
+  }else{
+    // Advance to next queue item
+    state.currentIdx++;
+    state.currentProbeStage=0;
+    state.firstAttemptResult=null;
+    saveSession();
+    if(state.currentIdx>=state.queue.length){completeAssessment()}
+    else{renderCurrentQuestion()}
+  }
+}
+
+function confirmExit(){
+  saveSession();
+  showToast('Session saved — you can resume later.');
+  setTimeout(()=>showScreen('screen-welcome'),1300);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// RESULTS
+// ════════════════════════════════════════════════════════════════════
+function completeAssessment(){
+  state.complete=true;
+  clearSession();
+  const sc=state.scores;
+  const answered=Object.keys(sc);
+  const correct=answered.filter(id=>sc[id].result==='correct');
+  const slips=answered.filter(id=>sc[id].result==='slip');
+  const wrong=answered.filter(id=>sc[id].result==='wrong');
+  const skipped=answered.filter(id=>sc[id].result==='skipped');
+  const pct=answered.length?Math.round(((correct.length+slips.length*0.5)/answered.length)*100):0;
+  const results={sessionId:state.sessionId,grade:state.selectedGrade,completedAt:new Date().toISOString(),
+    totalAnswered:answered.length,correct:correct.length,slips:slips.length,wrong:wrong.length,skipped:skipped.length,
+    accuracy:pct,scores:sc,traversalLog:state.traversalLog};
+  saveResults(results);
+  renderResults(results);
+  showScreen('screen-results');
+}
+
+function renderResults(r){
+  document.getElementById('results-title').textContent='Diagnostic Complete';
+  document.getElementById('results-subtitle').textContent=
+    `Grade ${r.grade} assessment — ${r.totalAnswered} questions across ${r.traversalLog.length+1} traversal step(s). `+
+    `${r.slips} slip(s) detected and saved from unnecessary traversal.`;
+
+  const emoji=r.accuracy>=80?'🌟':r.accuracy>=60?'👍':r.accuracy>=40?'⚠️':'🔴';
+  document.getElementById('score-overview').innerHTML=`
+    <div class="score-card hl"><div class="score-value sv-blue">${r.accuracy}%</div><div class="score-card-label">Score ${emoji}</div></div>
+    <div class="score-card"><div class="score-value sv-green">${r.correct}</div><div class="score-card-label">Mastered</div></div>
+    <div class="score-card"><div class="score-value sv-teal">${r.slips}</div><div class="score-card-label">Slips Saved</div></div>
+    <div class="score-card"><div class="score-value sv-red">${r.wrong}</div><div class="score-card-label">Gaps</div></div>
+    <div class="score-card"><div class="score-value sv-orange">${r.skipped}</div><div class="score-card-label">Skipped</div></div>`;
+
+  const masteredHTML=Object.entries(r.scores).filter(([,v])=>v.result==='correct'||v.result==='slip')
+    .sort(([,a],[,b])=>b.score-a.score).slice(0,12)
+    .map(([id,v])=>`<div class="node-result-item"><span class="nri-icon">${v.result==='slip'?'🎯':'✅'}</span><span class="nri-label">${nodeMap[id]?.label||id}</span><span class="nri-badge ${v.result}">${v.result==='slip'?'Slip':'100%'}</span></div>`).join('')||
+    `<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No mastered concepts recorded yet.</div>`;
+
+  const gapsHTML=Object.entries(r.scores).filter(([,v])=>v.result==='wrong'||v.result==='skipped')
+    .sort(([a],[b])=>(nodeMap[a]?.grade||0)-(nodeMap[b]?.grade||0))
+    .map(([id,v])=>`<div class="node-result-item"><span class="nri-icon">${v.result==='skipped'?'✋':'❌'}</span><span class="nri-label">${nodeMap[id]?.label||id}</span><span class="nri-badge ${v.result}">${v.result==='skipped'?'Skipped':'Gap'}</span></div>`).join('')||
+    `<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No gaps detected — excellent!</div>`;
+
+  document.getElementById('results-grid').innerHTML=`
+    <div class="results-section"><h3>Mastered & Slips</h3>${masteredHTML}</div>
+    <div class="results-section"><h3>Knowledge Gaps</h3>${gapsHTML}</div>`;
+
+  const legend=[
+    {cls:'mastered',label:'Mastered (100%)'},
+    {cls:'slip',label:'Slip Corrected (50%)'},
+    {cls:'gap',label:'Gap (0%)'},
+    {cls:'skipped',label:"I Don't Know"},
+    {cls:'untested',label:'Not Tested'}
+  ].map(x=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--${x.cls==='untested'?'border':''})`+
+    `${x.cls==='mastered'?'green':x.cls==='slip'?'teal':x.cls==='gap'?'red':x.cls==='skipped'?'orange':''}-glow);`+
+    `border:1px solid currentColor;margin-right:4px;"></span>${x.label}</span>`).join('');
+
+  const chips=CURRICULUM_NODES.map(node=>{
+    const s=r.scores[node.id];
+    const cls=!s?'untested':s.result==='correct'?'mastered':s.result==='slip'?'slip':s.result==='wrong'?'gap':'skipped';
+    const icon={'mastered':'✅','slip':'🎯','gap':'❌','skipped':'✋','untested':''}[cls];
+    return `<div class="gap-chip ${cls}" title="${node.domain} · ${node.phase}">${icon} ${node.label}</div>`;
+  }).join('');
+
+  document.getElementById('gap-map-section').innerHTML=`
+    <h3>Full Knowledge Map</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:11px;color:var(--text-muted);">
+      <span class="gap-chip mastered" style="padding:3px 8px;">✅ Mastered</span>
+      <span class="gap-chip slip" style="padding:3px 8px;">🎯 Slip Saved</span>
+      <span class="gap-chip gap" style="padding:3px 8px;">❌ Gap</span>
+      <span class="gap-chip skipped" style="padding:3px 8px;">✋ Skipped</span>
+      <span class="gap-chip untested" style="padding:3px 8px;">Untested</span>
+    </div>
+    <div class="gap-map-grid">${chips}</div>`;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+let _toastT;
+function showToast(msg){
+  clearTimeout(_toastT);
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#30363d;color:#e2e8f0;padding:12px 24px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:all .3s;opacity:0;pointer-events:none;';
+    document.body.appendChild(t);}
+  t.textContent=msg;
+  setTimeout(()=>{t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)'},10);
+  _toastT=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(80px)'},2800);
+}
+
+function startNew(){
+  clearSession();
+  state={selectedGrade:null,queue:[],currentIdx:0,scores:{},currentProbeStage:0,firstAttemptResult:null,traversalLog:[],complete:false,answered:false};
+  showScreen('screen-welcome');
+  document.querySelectorAll('.grade-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('btn-start').disabled=true;
+}
+
+function exportResults(){
+  const r=JSON.parse(localStorage.getItem(LS_RES)||'[]')[0];
+  if(!r){showToast('No results to export.');return}
+  const lines=['# Lumen Diagnostic Results',`Grade: ${r.grade}`,`Date: ${new Date(r.completedAt).toLocaleString()}`,
+    `Score: ${r.accuracy}%`,`Correct: ${r.correct} | Slips: ${r.slips} | Gaps: ${r.wrong} | Skipped: ${r.skipped}`,
+    '','## Knowledge Gaps (require remediation)',
+    ...Object.entries(r.scores).filter(([,v])=>v.result==='wrong'||v.result==='skipped')
+      .map(([id,v])=>`- [${v.result.toUpperCase()}] ${nodeMap[id]?.label||id}`),
+    '','## Slip-Corrected (watch, may need reinforcement)',
+    ...Object.entries(r.scores).filter(([,v])=>v.result==='slip')
+      .map(([id])=>`- ${nodeMap[id]?.label||id}`),
+    '','## Mastered',
+    ...Object.entries(r.scores).filter(([,v])=>v.result==='correct')
+      .map(([id])=>`- ${nodeMap[id]?.label||id}`)];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`lumen-diagnostic-gr${r.grade}-${Date.now()}.txt`;
+  a.click();
+  showToast('Report exported!');
+}
+
+document.addEventListener('DOMContentLoaded',checkResume);
+</script>
+</body>
+</html>
