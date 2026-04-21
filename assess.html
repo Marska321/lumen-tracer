@@ -190,11 +190,20 @@
         <button class="btn-resume" onclick="resumeSession()">Resume</button>
         <button class="btn-discard" onclick="discardSession()">Discard</button>
     </div>
-    <div class="learner-setup-section" style="width: 100%; max-width: 680px; margin: 0 auto 20px;">
-        <div class="grade-selector-label">Enter Learner Name</div>
-        <input type="text" id="learner-name-input" placeholder="e.g. Sipho Nkosi" style="width: 100%; padding: 14px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-primary); font-size: 15px; font-family: inherit; outline: none; box-sizing: border-box;">
+    <div class="learner-setup-section" id="name-step" style="width: 100%; max-width: 680px; margin: 0 auto 30px; text-align: center; background: var(--bg-card); padding: 36px 20px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <h2 id="greeting-text" style="font-size: 1.3rem; color: var(--text-primary); margin-bottom: 24px; font-weight: 600;">
+            Hi there! 👋 Before we start the test, may I ask your name?
+        </h2>
+        
+        <div id="name-input-group" style="display: flex; gap: 12px; justify-content: center; max-width: 400px; margin: 0 auto;">
+            <input type="text" id="learner-name-input" placeholder="Type your name here..." style="flex: 1; padding: 14px 20px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 40px; color: var(--text-primary); font-size: 15px; outline: none; font-family: inherit;">
+            <button class="btn-primary" onclick="submitName()" style="padding: 12px 28px; font-size: 14px;">Next</button>
+        </div>
+
+        <div id="ready-message" style="display: none; color: var(--accent); font-size: 1.2rem; font-weight: 600; line-height: 1.6;">
+        </div>
     </div>
-    <div class="grade-selector-section">
+    <div class="grade-selector-section" id="grade-selector-section" style="display: none;">
         <div class="grade-selector-label">Select the student's current grade level</div>
         <div class="grade-grid" id="grade-grid">
             <button class="grade-btn" onclick="selectGrade(this,'R')"><span class="grade-num" style="color:var(--grade-r)">R</span><span class="grade-lbl">Reception</span><span class="grade-dot" style="background:var(--grade-r)"></span></button>
@@ -760,6 +769,30 @@ function saveResults(r){try{const a=JSON.parse(localStorage.getItem(LS_RES)||'[]
 // ════════════════════════════════════════════════════════════════════
 // WELCOME FLOW
 // ════════════════════════════════════════════════════════════════════
+let currentLearnerName = "";
+
+function submitName() {
+    const nameInput = document.getElementById('learner-name-input').value.trim();
+    
+    if (!nameInput) {
+        showToast("Please enter your name to continue.", "error");
+        return;
+    }
+    
+    currentLearnerName = nameInput;
+    
+    document.getElementById('name-input-group').style.display = 'none';
+    document.getElementById('greeting-text').style.display = 'none';
+    
+    const readyDiv = document.getElementById('ready-message');
+    readyDiv.innerHTML = `Hi, <span style="color: #fff;">${currentLearnerName}</span>! ✨<br>Are you ready for this test? You will do great!`;
+    readyDiv.style.display = 'block';
+    
+    const gradeSection = document.getElementById('grade-selector-section');
+    gradeSection.style.display = 'block';
+    gradeSection.style.animation = 'slide-in 0.4s ease forwards';
+}
+
 function selectGrade(btn,grade){
   document.querySelectorAll('.grade-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
@@ -790,8 +823,7 @@ function discardSession(){clearSession();document.getElementById('resume-banner'
 function startAssessment(){
   if(!state.selectedGrade)return;
   
-  const nameInput=document.getElementById('learner-name-input').value.trim();
-  const learnerName=nameInput!==''?nameInput:'Unnamed Student';
+  const learnerName = currentLearnerName || 'Unnamed Student';
 
   clearSession();
   state={
@@ -1046,10 +1078,16 @@ function completeAssessment(){
 }
 
 function renderResults(r){
-  document.getElementById('results-title').textContent='Diagnostic Complete';
-  document.getElementById('results-subtitle').textContent=
-    `Grade ${r.grade} assessment — ${r.totalAnswered} questions across ${r.traversalLog.length+1} traversal step(s). `+
-    `${r.slips} slip(s) detected and saved from unnecessary traversal.`;
+  document.getElementById('results-title').textContent='Diagnostic Complete! 🎉';
+  document.getElementById('results-subtitle').innerHTML=`
+      <span style="font-size: 1.1rem; color: var(--text-primary); font-weight: 500;">
+          Thank you, <strong style="color: var(--accent);">${r.learnerName}</strong>, for taking the test! You did a wonderful job.
+      </span>
+      <br><br>
+      <span style="color: var(--text-secondary); font-size: 0.95rem; background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); display: inline-block;">
+          ✋ Please raise your hand or tell your teacher that you are done.
+      </span>
+  `;
 
   const emoji=r.accuracy>=80?'🌟':r.accuracy>=60?'👍':r.accuracy>=40?'⚠️':'🔴';
   document.getElementById('score-overview').innerHTML=`
